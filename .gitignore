@@ -1,0 +1,46 @@
+# ========================
+# VARIABLES DE ENTORNO
+# ========================
+.env
+.env.local
+.env.*.local
+
+# ========================
+# PYTHON (backend)
+# ========================
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+env/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+dist/
+build/
+
+# Credenciales Google OAuth (se generan al autenticarse)
+backend/token.json
+backend/credentials.json
+
+# ========================
+# NODE / REACT (frontend)
+# ========================
+node_modules/
+frontend/dist/
+frontend/build/
+frontend/.env
+
+# ========================
+# SISTEMA OPERATIVO
+# ========================
+.DS_Store
+Thumbs.db
+
+# ========================
+# EDITORES
+# ========================
+.vscode/settings.json
+.idea/
+*.swp
