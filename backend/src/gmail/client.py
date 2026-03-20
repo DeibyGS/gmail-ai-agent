@@ -1,6 +1,6 @@
 import base64
 from googleapiclient.discovery import build
-from config.settings import get_google_credentials, MAX_EMAILS_PER_RUN
+from config.settings import get_google_credentials, MAX_EMAILS_PER_RUN, GMAIL_FILTER_AFTER_DATE
 
 
 def get_gmail_service():
@@ -21,11 +21,13 @@ def get_unread_emails() -> list[dict]:
     """
     service = get_gmail_service()
 
-    # Busca correos no leídos en la bandeja de entrada
-    # 'is:unread in:inbox' es la misma búsqueda que harías en Gmail
+    # Busca correos no leídos recibidos a partir de GMAIL_FILTER_AFTER_DATE.
+    # El operador after: de Gmail acepta formato YYYY/MM/DD.
+    # Esto evita procesar el historial antiguo (miles de correos previos).
+    query = f"is:unread in:inbox after:{GMAIL_FILTER_AFTER_DATE}"
     result = service.users().messages().list(
         userId="me",
-        q="is:unread in:inbox",
+        q=query,
         maxResults=MAX_EMAILS_PER_RUN
     ).execute()
 
