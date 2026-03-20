@@ -27,7 +27,10 @@ from src.ai.classifier import classify_emails
 from src.calendar.client import create_event_from_email, get_upcoming_events
 from src.scheduler.job import run_processing_cycle
 from src.database.init_db import get_db, init_db
-from src.database.repository import get_stats_by_category, get_daily_volume, get_top_senders
+from src.database.repository import (
+    get_stats_by_category, get_daily_volume, get_top_senders,
+    get_processed_today, get_processed_history,
+)
 
 
 # ── Modelos Pydantic para validar el body de las peticiones POST ───────────────
@@ -236,6 +239,37 @@ def trigger_processing_cycle() -> dict:
     return {
         "message": "Ciclo de procesamiento ejecutado correctamente",
         "executed_at": datetime.now().isoformat(),
+    }
+
+
+# ── Endpoint de bandeja de procesados (SQLite) ────────────────────────────────
+
+@app.get("/api/emails/processed")
+def get_processed_emails(
+    view: str = Query("today", description="'today' o 'history'"),
+    since: Optional[str] = Query(None, description="Fecha mínima YYYY-MM-DD (solo history)"),
+    category: Optional[str] = Query(None, description="Filtrar por categoría (solo history)"),
+) -> dict:
+    """
+    Devuelve correos ya procesados desde la base de datos local.
+
+    view=today   → correos procesados hoy (tab "Procesados hoy")
+    view=history → historial completo filtrable (tab "Historial")
+    """
+    db = get_db()
+    try:
+        if view == "today":
+            emails = get_processed_today(db)
+        else:
+            emails = get_processed_history(db, since_day=since, category=category)
+    finally:
+        db.close()
+
+    return {
+        "emails": emails,
+        "total": len(emails),
+        "view": view,
+        "fetched_at": datetime.now().isoformat(),
     }
 
 

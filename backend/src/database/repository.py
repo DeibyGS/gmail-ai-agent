@@ -37,6 +37,7 @@ def save_emails(db: Session, emails: list[dict]) -> int:
             subject      = email.get("subject", ""),
             sender       = email.get("sender", ""),
             category     = email.get("category", "otro"),
+            summary      = email.get("summary", ""),
             processed_at = datetime.now(),
             day          = today,
         )
@@ -126,3 +127,56 @@ def get_top_senders(db: Session, limit: int = 10, since_day: str | None = None) 
         {"sender": sender, "count": count}
         for sender, count in sorted_senders[:limit]
     ]
+
+
+def get_processed_today(db: Session) -> list[dict]:
+    """
+    Devuelve todos los correos procesados hoy, ordenados del más reciente al más antiguo.
+    Incluye subject, sender, category, summary y hora de procesamiento.
+    """
+    today = date.today().isoformat()
+    emails = (
+        db.query(ProcessedEmail)
+        .filter(ProcessedEmail.day == today)
+        .order_by(ProcessedEmail.processed_at.desc())
+        .all()
+    )
+    return [_email_to_dict(e) for e in emails]
+
+
+def get_processed_history(
+    db: Session,
+    since_day: str | None = None,
+    category: str | None = None,
+    limit: int = 100,
+) -> list[dict]:
+    """
+    Devuelve el historial de correos procesados con filtros opcionales.
+
+    since_day: solo correos desde esa fecha (YYYY-MM-DD)
+    category:  filtrar por categoría específica
+    limit:     máximo de resultados (defecto 100)
+    """
+    query = db.query(ProcessedEmail).order_by(ProcessedEmail.processed_at.desc())
+
+    if since_day:
+        query = query.filter(ProcessedEmail.day >= since_day)
+    if category:
+        query = query.filter(ProcessedEmail.category == category)
+
+    emails = query.limit(limit).all()
+    return [_email_to_dict(e) for e in emails]
+
+
+def _email_to_dict(e: ProcessedEmail) -> dict:
+    """Convierte un registro ProcessedEmail a diccionario para la API."""
+    return {
+        "id":           e.id,
+        "email_id":     e.email_id,
+        "subject":      e.subject,
+        "sender":       e.sender,
+        "category":     e.category,
+        "summary":      e.summary,
+        "processed_at": e.processed_at.isoformat() if e.processed_at else "",
+        "day":          e.day,
+    }

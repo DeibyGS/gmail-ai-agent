@@ -36,6 +36,18 @@ export interface CalendarEvent {
   description?: string;
 }
 
+// Correo ya procesado y guardado en SQLite
+export interface ProcessedEmail {
+  id: number;
+  email_id: string;
+  subject: string;
+  sender: string;
+  category: EmailCategory;
+  summary: string;
+  processed_at: string;
+  day: string;
+}
+
 // Estadísticas históricas por categoría (SQLite)
 export interface CategoryStats {
   total: number;

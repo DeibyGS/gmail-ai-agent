@@ -15,6 +15,8 @@ from src.database.repository import (
     get_stats_by_category,
     get_daily_volume,
     get_top_senders,
+    get_processed_today,
+    get_processed_history,
 )
 
 
@@ -34,10 +36,10 @@ def db() -> Session:
 # ── Datos de prueba ───────────────────────────────────────────────────────────
 
 SAMPLE_EMAILS = [
-    {"id": "e1", "subject": "Reunión mañana", "sender": "jefe@empresa.com",       "category": "reunion"},
-    {"id": "e2", "subject": "Oferta especial",  "sender": "promo@tienda.com",       "category": "promocion"},
-    {"id": "e3", "subject": "Urgente: revisar", "sender": "jefe@empresa.com",       "category": "urgente"},
-    {"id": "e4", "subject": "Newsletter",        "sender": "noticias@servicio.com",  "category": "promocion"},
+    {"id": "e1", "subject": "Reunión mañana",  "sender": "jefe@empresa.com",      "category": "reunion",    "summary": "Reunión el lunes"},
+    {"id": "e2", "subject": "Oferta especial", "sender": "promo@tienda.com",      "category": "promocion",  "summary": "Descuento 50%"},
+    {"id": "e3", "subject": "Urgente: revisar","sender": "jefe@empresa.com",      "category": "urgente",    "summary": "Revisar contrato"},
+    {"id": "e4", "subject": "Newsletter",       "sender": "noticias@servicio.com", "category": "promocion",  "summary": "Novedades del mes"},
 ]
 
 
@@ -118,3 +120,56 @@ class TestTopSenders:
     def test_empty_db_returns_empty_list(self, db):
         result = get_top_senders(db)
         assert result == []
+
+
+# ── Tests de get_processed_today ──────────────────────────────────────────────
+
+class TestGetProcessedToday:
+
+    def test_returns_todays_emails(self, db):
+        """Debe devolver los correos procesados hoy."""
+        save_emails(db, SAMPLE_EMAILS)
+        result = get_processed_today(db)
+        assert len(result) == 4
+
+    def test_includes_summary(self, db):
+        """Los correos deben incluir el campo summary."""
+        save_emails(db, SAMPLE_EMAILS)
+        result = get_processed_today(db)
+        assert all("summary" in e for e in result)
+        subjects = [e["summary"] for e in result]
+        assert "Reunión el lunes" in subjects
+
+    def test_ordered_most_recent_first(self, db):
+        """Los correos deben venir del más reciente al más antiguo."""
+        save_emails(db, SAMPLE_EMAILS)
+        result = get_processed_today(db)
+        times = [e["processed_at"] for e in result]
+        assert times == sorted(times, reverse=True)
+
+    def test_empty_db_returns_empty(self, db):
+        assert get_processed_today(db) == []
+
+
+# ── Tests de get_processed_history ───────────────────────────────────────────
+
+class TestGetProcessedHistory:
+
+    def test_returns_all_without_filters(self, db):
+        save_emails(db, SAMPLE_EMAILS)
+        result = get_processed_history(db)
+        assert len(result) == 4
+
+    def test_filter_by_category(self, db):
+        save_emails(db, SAMPLE_EMAILS)
+        result = get_processed_history(db, category="promocion")
+        assert len(result) == 2
+        assert all(e["category"] == "promocion" for e in result)
+
+    def test_respects_limit(self, db):
+        save_emails(db, SAMPLE_EMAILS)
+        result = get_processed_history(db, limit=2)
+        assert len(result) == 2
+
+    def test_empty_db_returns_empty(self, db):
+        assert get_processed_history(db) == []
