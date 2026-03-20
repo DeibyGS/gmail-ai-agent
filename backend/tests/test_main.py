@@ -8,14 +8,12 @@ import importlib
 
 class TestMainStartup:
 
-    @patch("uvicorn.run")
-    def test_does_not_start_scheduler(self, mock_uvicorn):
-        """Al arrancar, NO debe iniciarse el scheduler automático."""
-        with patch("src.scheduler.job.start_scheduler") as mock_scheduler:
-            import main
-            importlib.reload(main)
-            main.main()
-            mock_scheduler.assert_not_called()
+    def test_scheduler_function_does_not_exist(self):
+        """start_scheduler fue eliminado del módulo — modo manual puro."""
+        from src.scheduler import job
+        assert not hasattr(job, "start_scheduler"), (
+            "start_scheduler no debería existir en modo manual"
+        )
 
     @patch("uvicorn.run")
     def test_does_not_run_initial_cycle(self, mock_uvicorn):

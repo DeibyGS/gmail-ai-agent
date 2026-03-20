@@ -36,6 +36,36 @@ export interface CalendarEvent {
   description?: string;
 }
 
+// Estadísticas históricas por categoría (SQLite)
+export interface CategoryStats {
+  total: number;
+  by_category: Record<string, number>;
+  fetched_at: string;
+}
+
+// Volumen diario de correos
+export interface DailyVolume {
+  day: string;
+  total: number;
+  by_category: Record<string, number>;
+}
+
+export interface DailyStats {
+  daily: DailyVolume[];
+  fetched_at: string;
+}
+
+// Top remitentes
+export interface SenderStat {
+  sender: string;
+  count: number;
+}
+
+export interface SendersStats {
+  senders: SenderStat[];
+  fetched_at: string;
+}
+
 // Body para POST /api/calendar/events
 export interface CreateEventPayload {
   title: string;

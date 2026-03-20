@@ -4,17 +4,21 @@ API REST con FastAPI para el gmail-ai-agent.
 Expone los datos del sistema al frontend React (Vite en localhost:5173).
 
 Endpoints:
-- GET  /api/emails           → correos no leídos clasificados y resumidos
-- GET  /api/emails/stats     → estadísticas por categoría y del día
-- GET  /api/calendar/events  → próximos eventos del calendario (30 días)
-- POST /api/calendar/events  → crear evento manualmente
-- POST /api/process          → forzar ciclo de procesamiento inmediato
+- GET  /api/emails                → correos no leídos clasificados y resumidos
+- GET  /api/emails/stats          → estadísticas en tiempo real (no leídos)
+- GET  /api/stats/categories      → distribución histórica por categoría (SQLite)
+- GET  /api/stats/daily           → volumen diario últimos 30 días (SQLite)
+- GET  /api/stats/senders         → top 10 remitentes (SQLite)
+- GET  /api/calendar/events       → próximos eventos del calendario (30 días)
+- POST /api/calendar/events       → crear evento manualmente
+- POST /api/process               → forzar ciclo de procesamiento inmediato
 """
 
 from datetime import datetime
 from typing import Optional
 
-from fastapi import FastAPI, HTTPException
+from contextlib import asynccontextmanager
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
@@ -22,6 +26,8 @@ from src.gmail.client import get_unread_emails, mark_as_read
 from src.ai.classifier import classify_emails
 from src.calendar.client import create_event_from_email, get_upcoming_events
 from src.scheduler.job import run_processing_cycle
+from src.database.init_db import get_db, init_db
+from src.database.repository import get_stats_by_category, get_daily_volume, get_top_senders
 
 
 # ── Modelos Pydantic para validar el body de las peticiones POST ───────────────
@@ -37,10 +43,17 @@ class CreateEventRequest(BaseModel):
 
 # ── Inicialización de la app FastAPI ──────────────────────────────────────────
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Inicializa SQLite al arrancar (crea tablas si no existen)."""
+    init_db()
+    yield
+
 app = FastAPI(
     title="Gmail AI Agent API",
     description="API REST para el sistema de procesamiento inteligente de correos",
     version="1.0.0",
+    lifespan=lifespan,
 )
 
 # CORS: permite que el frontend React en Vite (puerto 5173) llame a esta API
@@ -224,3 +237,50 @@ def trigger_processing_cycle() -> dict:
         "message": "Ciclo de procesamiento ejecutado correctamente",
         "executed_at": datetime.now().isoformat(),
     }
+
+
+# ── Endpoints de estadísticas históricas (SQLite) ─────────────────────────────
+
+@app.get("/api/stats/categories")
+def stats_by_category(since: Optional[str] = Query(None, description="Fecha mínima YYYY-MM-DD")) -> dict:
+    """
+    Distribución histórica de correos por categoría.
+    Parámetro opcional: since=YYYY-MM-DD para filtrar desde una fecha.
+    """
+    db = get_db()
+    try:
+        result = get_stats_by_category(db, since_day=since)
+    finally:
+        db.close()
+    return {**result, "fetched_at": datetime.now().isoformat()}
+
+
+@app.get("/api/stats/daily")
+def stats_daily_volume(days: int = Query(30, description="Número de días a mostrar")) -> dict:
+    """
+    Volumen de correos agrupado por día (últimos N días).
+    Útil para el gráfico de barras + línea de tendencia.
+    """
+    db = get_db()
+    try:
+        result = get_daily_volume(db, last_days=days)
+    finally:
+        db.close()
+    return {"daily": result, "fetched_at": datetime.now().isoformat()}
+
+
+@app.get("/api/stats/senders")
+def stats_top_senders(
+    limit: int = Query(10, description="Número de remitentes a devolver"),
+    since: Optional[str] = Query(None, description="Fecha mínima YYYY-MM-DD"),
+) -> dict:
+    """
+    Top remitentes que más correos han enviado.
+    Útil para decidir darse de baja de newsletters o servicios.
+    """
+    db = get_db()
+    try:
+        result = get_top_senders(db, limit=limit, since_day=since)
+    finally:
+        db.close()
+    return {"senders": result, "fetched_at": datetime.now().isoformat()}
