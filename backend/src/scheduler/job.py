@@ -73,7 +73,7 @@ def run_processing_cycle() -> None:
             print(f"  Error al marcar correo '{email.get('subject', '')}' como leído: {e}")
 
     # ── Paso 6: Resumen del ciclo ──────────────────────────────────────────────
-    print(f"\n--- Resumen del ciclo ---")
+    print("\n--- Resumen del ciclo ---")
     print(f"  Correos procesados : {len(classified_emails)}")
     print(f"  Eventos creados    : {events_created}")
     print(f"{'='*50}\n")

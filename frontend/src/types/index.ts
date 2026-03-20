@@ -34,6 +34,13 @@ export interface CalendarEvent {
   end: string;
   location?: string;
   description?: string;
+  link?: string;
+}
+
+// Metadatos locales del evento (color + etiqueta — no se persisten en backend)
+export interface EventMeta {
+  color: string;
+  label: string;
 }
 
 // Correo ya procesado y guardado en SQLite
@@ -81,8 +88,8 @@ export interface SendersStats {
 // Body para POST /api/calendar/events
 export interface CreateEventPayload {
   title: string;
-  start: string;
-  end: string;
+  date: string;        // YYYY-MM-DD
+  time?: string;       // HH:MM (opcional — sin hora = evento de día completo)
   location?: string;
   description?: string;
 }

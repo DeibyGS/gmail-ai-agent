@@ -59,6 +59,10 @@ export const triggerProcess = async (): Promise<void> => {
 };
 
 export const createCalendarEvent = async (payload: CreateEventPayload): Promise<CalendarEvent> => {
-  const { data } = await api.post<CalendarEvent>('/calendar/events', payload);
-  return data;
+  const { data } = await api.post<{ event: CalendarEvent }>('/calendar/events', payload);
+  return data.event;
+};
+
+export const deleteCalendarEvent = async (eventId: string): Promise<void> => {
+  await api.delete(`/calendar/events/${eventId}`);
 };

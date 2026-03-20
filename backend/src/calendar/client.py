@@ -84,6 +84,24 @@ def _build_event_body(event_data: dict) -> dict:
     return event_body
 
 
+def delete_event(event_id: str) -> bool:
+    """
+    Elimina un evento de Google Calendar por su ID.
+
+    Devuelve True si se eliminó correctamente, False si no existe.
+    Lanza excepción si hay un error de API inesperado.
+    """
+    service = get_calendar_service()
+    try:
+        service.events().delete(calendarId="primary", eventId=event_id).execute()
+        return True
+    except Exception as e:
+        # Google Calendar devuelve 410 Gone si el evento ya fue eliminado
+        if "410" in str(e) or "404" in str(e):
+            return False
+        raise
+
+
 def get_upcoming_events(max_results: int = 10) -> list[dict]:
     """
     Obtiene los próximos eventos del calendario del usuario.

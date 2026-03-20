@@ -144,7 +144,7 @@ def test_get_calendar_events(client):
     Verifica que GET /api/calendar/events devuelve los próximos eventos
     con los campos correctos.
     """
-    with patch("src.api.routes.get_upcoming_events", return_value=SAMPLE_EVENTS):
+    with patch("src.api.calendar_router.get_upcoming_events", return_value=SAMPLE_EVENTS):
         response = client.get("/api/calendar/events")
 
     assert response.status_code == 200
@@ -180,7 +180,7 @@ def test_create_calendar_event_success(client):
         "description": "Evento creado desde el frontend",
     }
 
-    with patch("src.api.routes.create_event_from_email", return_value=mock_created_event):
+    with patch("src.api.calendar_router.create_event_from_email", return_value=mock_created_event):
         response = client.post("/api/calendar/events", json=event_payload)
 
     assert response.status_code == 201

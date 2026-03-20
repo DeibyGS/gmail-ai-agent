@@ -8,6 +8,7 @@ from unittest.mock import patch, MagicMock
 from src.calendar.client import (
     create_event_from_email,
     get_upcoming_events,
+    delete_event,
     _build_event_body,
     _parse_event,
 )
@@ -174,3 +175,44 @@ def test_get_upcoming_events_empty(mock_service):
 
     result = get_upcoming_events()
     assert result == []
+
+
+# ========================
+# TESTS DE delete_event (con mock)
+# ========================
+
+@patch("src.calendar.client.get_calendar_service")
+def test_delete_event_returns_true_on_success(mock_service):
+    """Verifica que delete_event devuelve True cuando la API responde correctamente."""
+    mock_events = MagicMock()
+    mock_service.return_value.events.return_value = mock_events
+    mock_events.delete.return_value.execute.return_value = None  # Google devuelve vacío en 204
+
+    result = delete_event("event-id-123")
+
+    assert result is True
+    mock_events.delete.assert_called_once_with(calendarId="primary", eventId="event-id-123")
+
+
+@patch("src.calendar.client.get_calendar_service")
+def test_delete_event_returns_false_on_404(mock_service):
+    """Verifica que delete_event devuelve False si el evento no existe (404/410)."""
+    mock_events = MagicMock()
+    mock_service.return_value.events.return_value = mock_events
+    mock_events.delete.return_value.execute.side_effect = Exception("404 Not Found")
+
+    result = delete_event("evento-inexistente")
+
+    assert result is False
+
+
+@patch("src.calendar.client.get_calendar_service")
+def test_delete_event_raises_on_unexpected_error(mock_service):
+    """Verifica que delete_event propaga excepciones inesperadas (no 404/410)."""
+    mock_events = MagicMock()
+    mock_service.return_value.events.return_value = mock_events
+    mock_events.delete.return_value.execute.side_effect = Exception("500 Internal Server Error")
+
+    import pytest
+    with pytest.raises(Exception, match="500"):
+        delete_event("event-id-xyz")
