@@ -35,6 +35,9 @@ SCOPES = [
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 CHECK_INTERVAL_MINUTES = int(os.getenv("CHECK_INTERVAL_MINUTES", 30))
 MAX_EMAILS_PER_RUN = int(os.getenv("MAX_EMAILS_PER_RUN", 10))
+# Fecha de corte: solo se procesan correos recibidos a partir de esta fecha.
+# Formato YYYY/MM/DD — operador after: de la API de Gmail.
+GMAIL_FILTER_AFTER_DATE = os.getenv("GMAIL_FILTER_AFTER_DATE", "2026/03/20")
 
 
 def get_google_credentials() -> Credentials:
