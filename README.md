@@ -22,6 +22,7 @@ crea eventos en Google Calendar para reuniones, y expone todo a través de un da
 - react-big-calendar + date-fns — calendario interactivo
 - Recharts — gráficos de estadísticas (donut, barras, línea)
 - Axios — comunicación con el backend
+- Vitest + React Testing Library + @vitest/coverage-v8 — tests de componentes
 
 ### Deploy
 - Docker + GitHub Actions (CI/CD)
@@ -105,6 +106,17 @@ cd backend && source .venv/bin/activate && python main.py
 
 # Terminal 2 — Frontend
 cd frontend && npm run dev
+```
+
+### Tests
+
+```bash
+# Backend
+cd backend && source .venv/bin/activate && pytest tests/ -v
+
+# Frontend
+cd frontend && npm test              # modo watch
+cd frontend && npm run test:coverage # con reporte de cobertura
 ```
 <!-- /AUTO-GENERATED -->
 
