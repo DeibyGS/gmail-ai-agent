@@ -24,6 +24,9 @@ build/
 backend/token.json
 backend/credentials.json
 
+# Base de datos local SQLite (datos personales, no se commitean)
+backend/data/
+
 # ========================
 # NODE / REACT (frontend)
 # ========================
