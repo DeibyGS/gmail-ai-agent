@@ -91,14 +91,14 @@ export default function StatsPage() {
                     outerRadius={110}
                     paddingAngle={3}
                     dataKey="value"
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    label={({ name, percent }: { name?: string; percent?: number }) => `${name ?? ''} ${((percent ?? 0) * 100).toFixed(0)}%`}
                     labelLine={false}
                   >
                     {pieData.map((_, i) => (
                       <Cell key={i} fill={getColor(i)} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(value: number) => [`${value} correos`, '']} />
+                  <Tooltip formatter={(value: unknown) => [`${value} correos`, '']} />
                   <Legend />
                 </PieChart>
               </ResponsiveContainer>
@@ -155,7 +155,7 @@ export default function StatsPage() {
                     tick={{ fontSize: 11 }}
                     width={180}
                   />
-                  <Tooltip formatter={(value: number) => [`${value} correos`, 'Total']} />
+                  <Tooltip formatter={(value: unknown) => [`${value} correos`, 'Total']} />
                   <Bar dataKey="count" name="Correos" fill="#4f46e5" radius={[0, 4, 4, 0]} />
                 </BarChart>
               </ResponsiveContainer>
