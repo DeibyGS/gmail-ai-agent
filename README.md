@@ -40,7 +40,7 @@ crea eventos en Google Calendar para reuniones, y expone todo a través de un da
 - **Historial SQLite**: todos los correos procesados se guardan localmente con categoría, resumen y timestamp
 - **Dashboard de correos** con 3 pestañas: Pendientes · Procesados hoy · Historial filtrable
 - **Dashboard de estadísticas**: donut por categoría · barras+línea de volumen diario · top remitentes
-- **Calendario interactivo**: vistas mes/semana/día · crear evento manual · eliminar evento · etiquetas con color
+- **Calendario interactivo**: dos pestañas (lista de cards + grid mes/semana/día) · crear · editar · eliminar eventos · acciones inline en cards · etiquetas con color
 - **Script de arranque**: `emaildgs` inicia backend + frontend y abre el navegador automáticamente
 <!-- /AUTO-GENERATED -->
 

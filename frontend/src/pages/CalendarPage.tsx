@@ -9,6 +9,8 @@ import type { CalendarEvent, EventMeta, CreateEventPayload } from '../types';
 import { fetchCalendarEvents, createCalendarEvent, deleteCalendarEvent } from '../services/api';
 import EventCreateModal from '../components/EventCreateModal';
 import EventDetailModal from '../components/EventDetailModal';
+import EventEditModal from '../components/EventEditModal';
+import EventCard from '../components/EventCard';
 import { LABEL_OPTIONS } from '../components/EventCreateModal';
 
 // ── Configuración del localizador de fechas ───────────────────────────────────
@@ -28,24 +30,27 @@ interface RBCEvent {
 function toRBC(ev: CalendarEvent): RBCEvent {
   const start = new Date(ev.start);
   const end   = new Date(ev.end);
-  // Si start === end (evento de día completo sin hora), ajustamos end a +1h
   const safeEnd = end <= start ? new Date(start.getTime() + 60 * 60 * 1000) : end;
   return { id: ev.id, title: ev.title, start, end: safeEnd, resource: ev };
 }
 
+type Tab = 'list' | 'calendar';
+
 // ── Componente principal ──────────────────────────────────────────────────────
 
 export default function CalendarPage() {
-  const [events, setEvents]             = useState<CalendarEvent[]>([]);
-  const [localMeta, setLocalMeta]       = useState<Record<string, EventMeta>>({});
-  const [view, setView]                 = useState<View>('month');
-  const [currentDate, setCurrentDate]   = useState(new Date());
-  const [loading, setLoading]           = useState(true);
-  const [error, setError]               = useState<string | null>(null);
+  const [events, setEvents]           = useState<CalendarEvent[]>([]);
+  const [localMeta, setLocalMeta]     = useState<Record<string, EventMeta>>({});
+  const [view, setView]               = useState<View>('month');
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [loading, setLoading]         = useState(true);
+  const [error, setError]             = useState<string | null>(null);
+  const [activeTab, setActiveTab]     = useState<Tab>('list');
 
   // Modales
-  const [createSlot, setCreateSlot]     = useState<string | null>(null);   // fecha YYYY-MM-DD
-  const [detailEvent, setDetailEvent]   = useState<CalendarEvent | null>(null);
+  const [createSlot, setCreateSlot]   = useState<string | null>(null);
+  const [detailEvent, setDetailEvent] = useState<CalendarEvent | null>(null);
+  const [editEvent, setEditEvent]     = useState<CalendarEvent | null>(null);
 
   const loadEvents = useCallback(async () => {
     setLoading(true);
@@ -53,11 +58,10 @@ export default function CalendarPage() {
     try {
       const data = await fetchCalendarEvents();
       setEvents(data);
-      // Asignar etiqueta "reunion" por defecto a eventos sin meta local
       setLocalMeta(prev => {
         const next = { ...prev };
         data.forEach(ev => {
-          if (!next[ev.id]) next[ev.id] = LABEL_OPTIONS[0]; // 'reunion' como default
+          if (!next[ev.id]) next[ev.id] = LABEL_OPTIONS[0];
         });
         return next;
       });
@@ -70,9 +74,9 @@ export default function CalendarPage() {
 
   useEffect(() => { loadEvents(); }, [loadEvents]);
 
-  // Estilo dinámico de cada evento según su etiqueta/color local
+  // Estilo dinámico para react-big-calendar
   const eventPropGetter = (event: RBCEvent) => {
-    const meta = localMeta[event.id] ?? LABEL_OPTIONS[4]; // 'otro' como fallback
+    const meta = localMeta[event.id] ?? LABEL_OPTIONS[4];
     return {
       style: {
         backgroundColor: meta.color,
@@ -85,18 +89,15 @@ export default function CalendarPage() {
     };
   };
 
-  // Click en slot vacío → abrir modal de creación
+  // Handlers compartidos entre pestañas
   const handleSelectSlot = ({ start }: { start: Date }) => {
-    const dateStr = format(start, 'yyyy-MM-dd');
-    setCreateSlot(dateStr);
+    setCreateSlot(format(start, 'yyyy-MM-dd'));
   };
 
-  // Click en evento existente → abrir modal de detalle
   const handleSelectEvent = (event: RBCEvent) => {
     setDetailEvent(event.resource);
   };
 
-  // Confirmar creación de evento
   const handleCreate = async (payload: CreateEventPayload, meta: EventMeta) => {
     try {
       const created = await createCalendarEvent(payload);
@@ -109,7 +110,6 @@ export default function CalendarPage() {
     }
   };
 
-  // Eliminar evento
   const handleDelete = async (id: string) => {
     try {
       await deleteCalendarEvent(id);
@@ -121,12 +121,34 @@ export default function CalendarPage() {
     }
   };
 
-  // Cambiar etiqueta/color de un evento localmente
+  // Editar = DELETE antiguo + POST nuevo
+  const handleEdit = async (oldId: string, payload: CreateEventPayload, meta: EventMeta) => {
+    try {
+      await deleteCalendarEvent(oldId);
+      const created = await createCalendarEvent(payload);
+      setEvents(prev => [...prev.filter(e => e.id !== oldId), created]);
+      setLocalMeta(prev => {
+        const n = { ...prev };
+        delete n[oldId];
+        return { ...n, [created.id]: meta };
+      });
+    } catch {
+      alert('Error al guardar los cambios.');
+    } finally {
+      setEditEvent(null);
+    }
+  };
+
   const handleMetaChange = (id: string, meta: EventMeta) => {
     setLocalMeta(prev => ({ ...prev, [id]: meta }));
   };
 
   const rbcEvents = events.map(toRBC);
+
+  // Ordena los próximos eventos por fecha
+  const sortedEvents = [...events].sort(
+    (a, b) => new Date(a.start).getTime() - new Date(b.start).getTime()
+  );
 
   return (
     <div style={styles.page}>
@@ -145,11 +167,46 @@ export default function CalendarPage() {
         </button>
       </div>
 
+      {/* ── Pestañas ────────────────────────────────────── */}
+      <div style={styles.tabs}>
+        <button
+          style={{ ...styles.tab, ...(activeTab === 'list' ? styles.tabActive : {}) }}
+          onClick={() => setActiveTab('list')}
+        >
+          Próximos eventos
+        </button>
+        <button
+          style={{ ...styles.tab, ...(activeTab === 'calendar' ? styles.tabActive : {}) }}
+          onClick={() => setActiveTab('calendar')}
+        >
+          Calendario
+        </button>
+      </div>
+
       {error && <p style={styles.error}>{error}</p>}
       {loading && <p style={styles.info}>Cargando eventos...</p>}
 
-      {/* ── Calendario grande ───────────────────────────── */}
-      {!loading && (
+      {/* ── Pestaña: Próximos eventos ────────────────────── */}
+      {!loading && activeTab === 'list' && (
+        <div style={styles.listWrap}>
+          {sortedEvents.length === 0 ? (
+            <p style={styles.empty}>No hay eventos próximos. Pulsa + para crear uno.</p>
+          ) : (
+            sortedEvents.map(ev => (
+              <EventCard
+                key={ev.id}
+                event={ev}
+                meta={localMeta[ev.id] ?? LABEL_OPTIONS[4]}
+                onEdit={setEditEvent}
+                onDelete={handleDelete}
+              />
+            ))
+          )}
+        </div>
+      )}
+
+      {/* ── Pestaña: Calendario ─────────────────────────── */}
+      {!loading && activeTab === 'calendar' && (
         <div style={styles.calendarWrap}>
           <Calendar
             localizer={localizer}
@@ -184,6 +241,15 @@ export default function CalendarPage() {
           onDelete={handleDelete}
           onClose={() => setDetailEvent(null)}
           onMetaChange={handleMetaChange}
+          onEdit={setEditEvent}
+        />
+      )}
+      {editEvent !== null && (
+        <EventEditModal
+          event={editEvent}
+          currentMeta={localMeta[editEvent.id] ?? LABEL_OPTIONS[4]}
+          onConfirm={handleEdit}
+          onClose={() => setEditEvent(null)}
         />
       )}
     </div>
@@ -209,12 +275,12 @@ const MESSAGES_ES = {
 const styles: Record<string, React.CSSProperties> = {
   page: {
     display: 'flex', flexDirection: 'column',
-    height: 'calc(100vh - 60px)',   // ocupa toda la pantalla menos la navbar
+    height: 'calc(100vh - 60px)',
     padding: '1rem 1.5rem', boxSizing: 'border-box',
   },
   header: {
     display: 'flex', alignItems: 'center', gap: '0.75rem',
-    flexWrap: 'wrap', marginBottom: '0.75rem',
+    flexWrap: 'wrap', marginBottom: '0.5rem',
   },
   title: { margin: 0, fontSize: '1.25rem', fontWeight: 700, marginRight: 'auto' },
   legend: { display: 'flex', gap: '0.4rem', flexWrap: 'wrap' },
@@ -227,15 +293,29 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: '6px', padding: '0.45rem 1rem',
     cursor: 'pointer', fontWeight: 600, fontSize: '0.875rem',
   },
+  tabs: {
+    display: 'flex', gap: '0', marginBottom: '0.75rem',
+    borderBottom: '2px solid #e5e7eb',
+  },
+  tab: {
+    background: 'none', border: 'none', padding: '0.5rem 1.1rem',
+    fontSize: '0.875rem', cursor: 'pointer', color: '#6b7280',
+    borderBottom: '2px solid transparent', marginBottom: '-2px',
+    fontWeight: 500,
+  },
+  tabActive: {
+    color: '#4f46e5', borderBottom: '2px solid #4f46e5', fontWeight: 700,
+  },
+  listWrap: {
+    flex: 1, overflowY: 'auto', paddingRight: '2px',
+  },
   calendarWrap: {
-    flex: 1,
-    minHeight: 0,
-    background: '#fff',
-    borderRadius: '10px',
-    border: '1px solid #e5e7eb',
-    padding: '0.75rem',
+    flex: 1, minHeight: 0,
+    background: '#fff', borderRadius: '10px',
+    border: '1px solid #e5e7eb', padding: '0.75rem',
     overflow: 'hidden',
   },
+  empty: { color: '#9ca3af', fontSize: '0.9rem', marginTop: '2rem', textAlign: 'center' },
   info:  { color: '#6b7280', fontSize: '0.9rem' },
   error: { color: '#dc2626', fontSize: '0.9rem' },
 };

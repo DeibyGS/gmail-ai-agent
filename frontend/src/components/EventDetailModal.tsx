@@ -7,9 +7,10 @@ interface Props {
   onDelete: (id: string) => void;
   onClose: () => void;
   onMetaChange: (id: string, meta: EventMeta) => void;
+  onEdit?: (event: CalendarEvent) => void;
 }
 
-export default function EventDetailModal({ event, meta, onDelete, onClose, onMetaChange }: Props) {
+export default function EventDetailModal({ event, meta, onDelete, onClose, onMetaChange, onEdit }: Props) {
   const isFromEmail = Boolean(event.description?.includes('📧') || event.description?.toLowerCase().includes('email'));
 
   const fmt = (iso: string) => {
@@ -93,6 +94,9 @@ export default function EventDetailModal({ event, meta, onDelete, onClose, onMet
           >
             Eliminar evento
           </button>
+          {onEdit && (
+            <button style={btnEdit} onClick={() => { onClose(); onEdit(event); }}>Editar</button>
+          )}
           <button style={btnClose} onClick={onClose}>Cerrar</button>
         </div>
       </div>
@@ -134,4 +138,5 @@ const actions: React.CSSProperties = {
   padding: '1rem 1.25rem', borderTop: '1px solid #e5e7eb',
 };
 const btnDelete: React.CSSProperties = { background: '#fef2f2', border: '1px solid #fca5a5', color: '#dc2626', borderRadius: '6px', padding: '0.45rem 1rem', cursor: 'pointer', fontSize: '0.875rem' };
-const btnClose: React.CSSProperties = { background: '#f3f4f6', border: '1px solid #d1d5db', borderRadius: '6px', padding: '0.45rem 1rem', cursor: 'pointer', fontSize: '0.875rem' };
+const btnEdit: React.CSSProperties   = { background: '#f3f4f6', border: '1px solid #d1d5db', borderRadius: '6px', padding: '0.45rem 1rem', cursor: 'pointer', fontSize: '0.875rem' };
+const btnClose: React.CSSProperties  = { background: '#4f46e5', color: '#fff', border: 'none', borderRadius: '6px', padding: '0.45rem 1rem', cursor: 'pointer', fontSize: '0.875rem', fontWeight: 600 };
