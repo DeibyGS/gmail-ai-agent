@@ -2,56 +2,37 @@
 Punto de entrada de la aplicación gmail-ai-agent.
 
 Al ejecutar este archivo:
-1. Se lanza un ciclo inmediato de procesamiento de correos
-2. Se inicia el scheduler que repite el ciclo cada CHECK_INTERVAL_MINUTES
-3. Se levanta la API FastAPI con uvicorn para que el frontend React la consuma
-4. La aplicación se mantiene viva hasta recibir Ctrl+C
-"""
+1. Se levanta la API FastAPI con uvicorn
+2. El procesamiento de correos ocurre SOLO cuando el usuario lo solicita
+   vía POST /api/process desde el frontend (botón "Procesar ahora")
 
-import sys
+El scheduler automático fue eliminado intencionalmente:
+- El usuario decide cuándo procesar sus correos
+- Evita consumo innecesario de la API de Gemini
+- Más adecuado para uso personal con bajo volumen de correos
+"""
 
 import uvicorn
 
-from src.scheduler.job import run_processing_cycle, start_scheduler
 from src.api.routes import app  # app es la instancia FastAPI con todos los endpoints
 
 
 def main() -> None:
-    """Inicia la aplicación: ciclo inmediato + scheduler periódico + servidor FastAPI."""
+    """Inicia el servidor FastAPI. El procesamiento es 100% manual."""
 
     print("=" * 50)
     print("  Gmail AI Agent — iniciando...")
     print("=" * 50)
+    print("\nModo: procesamiento manual (usa el botón 'Procesar ahora')")
+    print("API disponible en http://localhost:8000")
+    print("Presiona Ctrl+C para detener.\n")
 
-    # ── Ciclo inmediato al arrancar ────────────────────────────────────────────
-    # Ejecutamos un ciclo ahora mismo para no esperar el primer intervalo
-    print("\nEjecutando ciclo inicial...")
-    run_processing_cycle()
-
-    # ── Iniciar el scheduler en segundo plano ──────────────────────────────────
-    # El scheduler corre en un hilo separado, por eso podemos levantar uvicorn después
-    scheduler = start_scheduler()
-
-    # ── Levantar la API FastAPI con uvicorn ────────────────────────────────────
-    # uvicorn bloquea el hilo principal; el scheduler sigue corriendo en paralelo
-    # host="0.0.0.0" permite conexiones desde cualquier interfaz (necesario para Docker)
-    print("\nAPI disponible en http://localhost:8000")
-    print("Presiona Ctrl+C para detener la aplicación.\n")
-
-    try:
-        uvicorn.run(
-            app,
-            host="0.0.0.0",
-            port=8000,
-            log_level="info",
-        )
-    except KeyboardInterrupt:
-        pass
-    finally:
-        print("\nDeteniendo el scheduler...")
-        scheduler.shutdown()
-        print("Aplicación detenida. ¡Hasta luego!")
-        sys.exit(0)
+    uvicorn.run(
+        app,
+        host="0.0.0.0",
+        port=8000,
+        log_level="info",
+    )
 
 
 if __name__ == "__main__":
