@@ -30,5 +30,6 @@ class ProcessedEmail(Base):
     subject      = Column(String, default="")       # Asunto del correo
     sender       = Column(String, default="")       # Remitente (email o nombre)
     category     = Column(String, nullable=False)   # Clasificación de Gemini
+    summary      = Column(String, default="")       # Resumen generado por Gemini
     processed_at = Column(DateTime, default=datetime.now)  # Momento exacto del procesamiento
     day          = Column(String, nullable=False)   # "YYYY-MM-DD" para agrupar por día fácilmente

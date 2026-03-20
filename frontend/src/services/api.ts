@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { Email, EmailStats, CalendarEvent, CreateEventPayload, CategoryStats, DailyStats, SendersStats } from '../types';
+import type { Email, EmailStats, CalendarEvent, CreateEventPayload, CategoryStats, DailyStats, SendersStats, ProcessedEmail } from '../types';
 
 // Base URL del backend FastAPI (CORS ya configurado para este origen)
 const api = axios.create({
@@ -22,6 +22,18 @@ export const fetchStats = async (): Promise<EmailStats> => {
 export const fetchCalendarEvents = async (): Promise<CalendarEvent[]> => {
   const { data } = await api.get<{ events: CalendarEvent[] }>('/calendar/events');
   return data.events;
+};
+
+export const fetchProcessedEmails = async (
+  view: 'today' | 'history' = 'today',
+  since?: string,
+  category?: string,
+): Promise<ProcessedEmail[]> => {
+  const params: Record<string, unknown> = { view };
+  if (since) params.since = since;
+  if (category) params.category = category;
+  const { data } = await api.get<{ emails: ProcessedEmail[] }>('/emails/processed', { params });
+  return data.emails;
 };
 
 export const fetchCategoryStats = async (since?: string): Promise<CategoryStats> => {
