@@ -6,7 +6,7 @@ from google.auth.transport.requests import Request
 from google_auth_oauthlib.flow import InstalledAppFlow
 
 # Carga las variables del archivo .env
-load_dotenv()
+load_dotenv(override=True)
 
 # ========================
 # RUTAS BASE
