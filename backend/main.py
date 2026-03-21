@@ -28,10 +28,11 @@ def main() -> None:
     print("Presiona Ctrl+C para detener.\n")
 
     uvicorn.run(
-        app,
+        "src.api.routes:app",
         host="0.0.0.0",
         port=8000,
         log_level="info",
+        reload=True,
     )
 
 
