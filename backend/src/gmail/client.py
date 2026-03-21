@@ -46,6 +46,7 @@ def get_unread_emails() -> list[dict]:
         ).execute()
 
         email = _parse_email(detail)
+        email["attachments"] = _extract_ics_attachments(service, msg["id"], detail)
         emails.append(email)
 
     return emails
@@ -107,6 +108,42 @@ def _decode_base64(data: str) -> str:
     """
     decoded_bytes = base64.urlsafe_b64decode(data + "==")
     return decoded_bytes.decode("utf-8", errors="ignore")
+
+
+def _extract_ics_attachments(service, message_id: str, message: dict) -> list[dict]:
+    """
+    Busca y descarga adjuntos .ics (iCalendar) del mensaje de Gmail.
+
+    Los adjuntos pequeños vienen inline (body.data).
+    Los grandes se descargan por separado usando body.attachmentId.
+    Devuelve una lista de dicts con 'filename' y 'data' (bytes).
+    """
+    attachments = []
+    parts = message.get("payload", {}).get("parts", [])
+
+    for part in parts:
+        mime = part.get("mimeType", "")
+        filename = part.get("filename", "")
+        is_ics = mime == "text/calendar" or filename.lower().endswith(".ics")
+        if not is_ics:
+            continue
+
+        body = part.get("body", {})
+        try:
+            if body.get("data"):
+                data = base64.urlsafe_b64decode(body["data"] + "==")
+            elif body.get("attachmentId"):
+                att = service.users().messages().attachments().get(
+                    userId="me", messageId=message_id, id=body["attachmentId"]
+                ).execute()
+                data = base64.urlsafe_b64decode(att["data"] + "==")
+            else:
+                continue
+            attachments.append({"filename": filename, "data": data})
+        except Exception as e:
+            print(f"  Error descargando adjunto '{filename}': {e}")
+
+    return attachments
 
 
 def mark_as_read(email_id: str) -> None:

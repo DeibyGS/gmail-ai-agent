@@ -180,7 +180,7 @@ def test_create_calendar_event_success(client):
         "description": "Evento creado desde el frontend",
     }
 
-    with patch("src.api.calendar_router.create_event_from_email", return_value=mock_created_event):
+    with patch("src.api.calendar_router.create_event", return_value=mock_created_event):
         response = client.post("/api/calendar/events", json=event_payload)
 
     assert response.status_code == 201

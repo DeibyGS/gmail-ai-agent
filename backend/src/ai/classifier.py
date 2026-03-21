@@ -1,5 +1,7 @@
 import json
+from datetime import datetime
 from google import genai
+from icalendar import Calendar
 from config.settings import GEMINI_API_KEY
 
 # Crea el cliente de Gemini con la API key
@@ -37,6 +39,11 @@ def classify_email(email: dict) -> dict:
             "event_data": None
         }
 
+    # Si hay adjunto .ics, sus datos son más fiables que los de Gemini
+    ics_event_data = extract_event_from_ics(email.get("attachments", []))
+    if ics_event_data:
+        result["event_data"] = ics_event_data
+
     # Combinamos el correo original con el resultado de Gemini
     return {**email, **result}
 
@@ -48,8 +55,11 @@ def _build_prompt(email: dict) -> str:
     Un buen prompt es específico sobre el formato de respuesta esperado.
     Pedimos JSON directamente para no tener que parsear texto libre.
     """
+    today = datetime.now().strftime("%Y-%m-%d")
     return f"""
 Analiza el siguiente correo electrónico y responde ÚNICAMENTE con un JSON válido, sin texto adicional.
+
+Fecha actual: {today}
 
 CORREO:
 De: {email['sender']}
@@ -67,6 +77,8 @@ INSTRUCCIONES:
 2. Resume el correo en máximo 2 líneas en español.
 
 3. Si la categoría es "reunion", extrae los datos del evento. Si no, pon null.
+   - Para la fecha, usa el año de "Fecha actual" si el correo no especifica año o si la fecha resultante sería en el pasado.
+   - Si la fecha es claramente en el pasado y no tiene sentido crearla hoy, pon null en date.
 
 4. Si el evento es recurrente (se repite), indica el patrón con este formato exacto:
    - Solo semanal con días específicos: "WEEKLY:MO", "WEEKLY:MO,WE", "WEEKLY:TU,TH,FR"
@@ -114,6 +126,90 @@ def _parse_response(text: str) -> dict:
         data["category"] = "otro"
 
     return data
+
+
+def extract_event_from_ics(attachments: list[dict]) -> dict | None:
+    """
+    Parsea adjuntos .ics y extrae los datos del primer VEVENT encontrado.
+
+    El formato iCalendar (RFC 5545) es más preciso que la extracción por IA:
+    las fechas, horas y recurrencias vienen ya estructuradas.
+
+    Devuelve un dict con los campos de event_data, o None si no hay .ics.
+    """
+    for att in attachments:
+        try:
+            cal = Calendar.from_ical(att["data"])
+            for component in cal.walk():
+                if component.name != "VEVENT":
+                    continue
+
+                title = str(component.get("SUMMARY", "")).strip() or None
+                location = str(component.get("LOCATION", "")).strip() or None
+                description = str(component.get("DESCRIPTION", "")).strip() or None
+
+                date_str: str | None = None
+                time_str: str | None = None
+                dtstart = component.get("DTSTART")
+                if dtstart:
+                    dt = dtstart.dt
+                    if hasattr(dt, "hour"):  # datetime con hora
+                        date_str = dt.strftime("%Y-%m-%d")
+                        time_str = dt.strftime("%H:%M")
+                    else:                     # date sin hora (evento de día completo)
+                        date_str = dt.strftime("%Y-%m-%d")
+
+                recurrence = _rrule_to_pattern(component.get("RRULE"))
+
+                return {
+                    "title": title,
+                    "date": date_str,
+                    "time": time_str,
+                    "location": location,
+                    "description": description,
+                    "recurrence": recurrence,
+                }
+        except Exception as e:
+            print(f"  Error parseando adjunto .ics: {e}")
+
+    return None
+
+
+def _rrule_to_pattern(rrule) -> str | None:
+    """
+    Convierte un objeto RRULE de icalendar al formato interno del proyecto.
+
+    Formatos de salida:
+      "DAILY"         — evento diario
+      "WEEKLY:MO,WE"  — semanal con días específicos
+      "MONTHLY:15"    — mensual por día del mes
+    """
+    if not rrule:
+        return None
+
+    freq_list = rrule.get("FREQ", [])
+    if not freq_list:
+        return None
+
+    freq = str(freq_list[0]).upper()
+
+    if freq == "DAILY":
+        return "DAILY"
+
+    if freq == "WEEKLY":
+        byday = rrule.get("BYDAY", [])
+        if byday:
+            days = ",".join(str(d) for d in byday)
+            return f"WEEKLY:{days}"
+        return None
+
+    if freq == "MONTHLY":
+        bymonthday = rrule.get("BYMONTHDAY", [])
+        if bymonthday:
+            return f"MONTHLY:{bymonthday[0]}"
+        return None
+
+    return None
 
 
 def classify_emails(emails: list[dict]) -> list[dict]:
