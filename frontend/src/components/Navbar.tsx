@@ -1,6 +1,7 @@
 import { NavLink } from 'react-router-dom';
+import { theme } from '../theme';
 
-// Barra de navegación principal entre las tres vistas del agente
+// Barra de navegación principal — sticky, glassmorphism dark
 export default function Navbar() {
   return (
     <nav style={styles.nav}>
@@ -14,11 +15,14 @@ export default function Navbar() {
   );
 }
 
-// navStyle recibe el objeto { isActive } que React Router inyecta automáticamente
+// navStyle recibe { isActive } que React Router inyecta automáticamente
 const navStyle = ({ isActive }: { isActive: boolean }) => ({
   ...styles.link,
+  color: isActive ? theme.colors.textPrimary : theme.colors.textSecondary,
   fontWeight: isActive ? 700 : 400,
-  borderBottom: isActive ? '2px solid #4f46e5' : '2px solid transparent',
+  borderBottom: isActive
+    ? `2px solid ${theme.colors.gradientStart}`
+    : '2px solid transparent',
 });
 
 const styles: Record<string, React.CSSProperties> = {
@@ -26,14 +30,25 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: '0.75rem 1.5rem',
-    background: '#fff',
-    borderBottom: '1px solid #e5e7eb',
+    padding: '0 1.5rem',
+    height: '56px',
+    background: 'rgba(17,24,39,0.85)',
+    backdropFilter: 'blur(12px)',
+    WebkitBackdropFilter: 'blur(12px)',
+    borderBottom: `1px solid ${theme.colors.border}`,
+    position: 'sticky',
+    top: 0,
+    zIndex: 100,
   },
   brand: {
+    fontFamily: theme.fonts.heading,
     fontWeight: 700,
-    fontSize: '1.1rem',
-    color: '#4f46e5',
+    fontSize: '1.05rem',
+    // Gradiente en el texto via background-clip
+    background: theme.gradients.primary,
+    WebkitBackgroundClip: 'text',
+    WebkitTextFillColor: 'transparent',
+    backgroundClip: 'text',
   },
   links: {
     display: 'flex',
@@ -41,8 +56,9 @@ const styles: Record<string, React.CSSProperties> = {
   },
   link: {
     textDecoration: 'none',
-    color: '#374151',
+    fontSize: '0.875rem',
     paddingBottom: '4px',
-    transition: 'border-bottom 0.15s',
+    transition: 'color 0.15s ease, border-bottom 0.15s ease',
+    fontFamily: theme.fonts.body,
   },
 };

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import type { Email, ProcessedEmail, EmailCategory } from '../types';
 import { fetchEmails, fetchProcessedEmails, triggerProcess } from '../services/api';
 import EmailCard from '../components/EmailCard';
+import { theme, btnStyles } from '../theme';
 
 type Tab = 'pending' | 'today' | 'history';
 
@@ -9,15 +10,15 @@ type Tab = 'pending' | 'today' | 'history';
 const CATEGORIES: EmailCategory[] = ['reunion', 'urgente', 'informativo', 'promocion', 'otro'];
 
 export default function EmailsPage() {
-  const [activeTab, setActiveTab]         = useState<Tab>('pending');
-  const [pending, setPending]             = useState<Email[]>([]);
+  const [activeTab, setActiveTab]           = useState<Tab>('pending');
+  const [pending, setPending]               = useState<Email[]>([]);
   const [processedToday, setProcessedToday] = useState<ProcessedEmail[]>([]);
-  const [history, setHistory]             = useState<ProcessedEmail[]>([]);
+  const [history, setHistory]               = useState<ProcessedEmail[]>([]);
   const [filterCategory, setFilterCategory] = useState('');
-  const [filterSince, setFilterSince]     = useState('');
-  const [loading, setLoading]             = useState(false);
-  const [processing, setProcessing]       = useState(false);
-  const [error, setError]                 = useState<string | null>(null);
+  const [filterSince, setFilterSince]       = useState('');
+  const [loading, setLoading]               = useState(false);
+  const [processing, setProcessing]         = useState(false);
+  const [error, setError]                   = useState<string | null>(null);
 
   // Carga los datos según la pestaña activa
   const loadTab = async (tab: Tab) => {
@@ -43,9 +44,7 @@ export default function EmailsPage() {
 
   useEffect(() => { loadTab(activeTab); }, [activeTab]);
 
-  const handleTabChange = (tab: Tab) => {
-    setActiveTab(tab);
-  };
+  const handleTabChange = (tab: Tab) => { setActiveTab(tab); };
 
   const handleProcess = async () => {
     setProcessing(true);
@@ -59,7 +58,7 @@ export default function EmailsPage() {
       ]);
       setPending(newPending);
       setProcessedToday(newToday);
-      // Si estamos en otra pestaña, volvemos a pendientes para ver el resultado
+      // Si estamos en otra pestaña, volvemos a hoy para ver el resultado
       if (activeTab !== 'today') setActiveTab('today');
     } catch {
       setError('Error al procesar correos.');
@@ -77,7 +76,8 @@ export default function EmailsPage() {
       <div style={styles.header}>
         <h1 style={styles.title}>Correos</h1>
         <button
-          style={{ ...styles.btnProcess, opacity: processing ? 0.6 : 1 }}
+          className={processing ? 'ai-processing' : ''}
+          style={{ ...btnStyles.primary, opacity: processing ? 0.7 : 1 }}
           onClick={handleProcess}
           disabled={processing}
         >
@@ -142,7 +142,6 @@ export default function EmailsPage() {
               value={filterSince}
               onChange={e => setFilterSince(e.target.value)}
               style={styles.filterInput}
-              placeholder="Desde fecha"
             />
             <select
               value={filterCategory}
@@ -152,7 +151,7 @@ export default function EmailsPage() {
               <option value="">Todas las categorías</option>
               {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
-            <button style={styles.btnFilter} onClick={handleHistoryFilter}>
+            <button style={btnStyles.secondary} onClick={handleHistoryFilter}>
               Filtrar
             </button>
           </div>
@@ -174,23 +173,23 @@ export default function EmailsPage() {
 
 // ── Componente interno: tarjeta de correo procesado ──────────────────────────
 
-const colorPalette: Record<string, { bg: string; text: string }> = {};
-const palette = [
-  { bg: '#fef2f2', text: '#dc2626' },
-  { bg: '#eff6ff', text: '#2563eb' },
-  { bg: '#f0fdf4', text: '#16a34a' },
-  { bg: '#fff7ed', text: '#ea580c' },
-  { bg: '#fdf4ff', text: '#9333ea' },
-  { bg: '#f9fafb', text: '#6b7280' },
+const fallbackPalette = [
+  { bg: 'rgba(99,102,241,0.15)',  text: '#818CF8',  border: 'rgba(99,102,241,0.3)' },
+  { bg: 'rgba(34,211,238,0.15)',  text: '#22D3EE',  border: 'rgba(34,211,238,0.3)' },
+  { bg: 'rgba(167,139,250,0.15)', text: '#A78BFA',  border: 'rgba(167,139,250,0.3)' },
+  { bg: 'rgba(251,146,60,0.15)',  text: '#FB923C',  border: 'rgba(251,146,60,0.3)' },
+  { bg: 'rgba(52,211,153,0.15)',  text: '#34D399',  border: 'rgba(52,211,153,0.3)' },
 ];
-let paletteIndex = 0;
+const colorCache: Record<string, { bg: string; text: string; border: string }> = {};
+let paletteIdx = 0;
 
-function colorFor(category: string) {
-  if (!colorPalette[category]) {
-    colorPalette[category] = palette[paletteIndex % palette.length];
-    paletteIndex++;
+function colorFor(cat: string) {
+  if (theme.colors.categoryColors[cat]) return theme.colors.categoryColors[cat];
+  if (!colorCache[cat]) {
+    colorCache[cat] = fallbackPalette[paletteIdx % fallbackPalette.length];
+    paletteIdx++;
   }
-  return colorPalette[category];
+  return colorCache[cat];
 }
 
 function ProcessedEmailCard({ email, showDate = false }: { email: ProcessedEmail; showDate?: boolean }) {
@@ -201,7 +200,12 @@ function ProcessedEmailCard({ email, showDate = false }: { email: ProcessedEmail
   return (
     <div style={cardStyles.card}>
       <div style={cardStyles.header}>
-        <span style={{ ...cardStyles.badge, background: colors.bg, color: colors.text }}>
+        <span style={{
+          ...cardStyles.badge,
+          background: colors.bg,
+          color: colors.text,
+          border: `1px solid ${colors.border}`,
+        }}>
           {email.category}
         </span>
         <span style={cardStyles.time}>{showDate ? `${date} ${time}` : time}</span>
@@ -218,44 +222,67 @@ function ProcessedEmailCard({ email, showDate = false }: { email: ProcessedEmail
 const styles: Record<string, React.CSSProperties> = {
   page:    { padding: '1.5rem', maxWidth: '760px', margin: '0 auto' },
   header:  { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' },
-  title:   { margin: 0, fontSize: '1.25rem', fontWeight: 700 },
-  btnProcess: {
-    background: '#4f46e5', color: '#fff', border: 'none',
-    borderRadius: '6px', padding: '0.5rem 1.1rem',
-    cursor: 'pointer', fontWeight: 600, fontSize: '0.875rem',
+  title:   { margin: 0, fontFamily: theme.fonts.heading, fontSize: '1.25rem', fontWeight: 700, color: theme.colors.textPrimary },
+  tabs: {
+    display: 'flex',
+    gap: '0.5rem',
+    marginBottom: '1.25rem',
+    borderBottom: `1px solid ${theme.colors.border}`,
+    paddingBottom: '0',
   },
-  tabs: { display: 'flex', gap: '0.5rem', marginBottom: '1.25rem', borderBottom: '1px solid #e5e7eb', paddingBottom: '0' },
   tab: {
-    background: 'none', border: 'none', padding: '0.5rem 1rem',
-    cursor: 'pointer', fontSize: '0.875rem', color: '#6b7280',
-    borderBottom: '2px solid transparent', marginBottom: '-1px',
+    background: 'none',
+    border: 'none',
+    padding: '0.5rem 1rem',
+    cursor: 'pointer',
+    fontFamily: theme.fonts.body,
+    fontSize: '0.875rem',
+    color: theme.colors.textMuted,
+    borderBottom: '2px solid transparent',
+    marginBottom: '-1px',
+    transition: 'color 0.15s ease',
   },
-  tabActive: { color: '#4f46e5', fontWeight: 600, borderBottom: '2px solid #4f46e5' },
+  tabActive: {
+    color: '#818CF8',
+    fontWeight: 700,
+    borderBottom: `2px solid ${theme.colors.gradientStart}`,
+  },
   filters: { display: 'flex', gap: '0.75rem', marginBottom: '1rem', flexWrap: 'wrap' },
   filterInput: {
-    border: '1px solid #e5e7eb', borderRadius: '6px',
-    padding: '0.4rem 0.75rem', fontSize: '0.875rem',
-  },
-  btnFilter: {
-    background: '#f3f4f6', border: '1px solid #e5e7eb',
-    borderRadius: '6px', padding: '0.4rem 1rem',
-    cursor: 'pointer', fontSize: '0.875rem',
+    background: theme.colors.surface,
+    border: `1px solid rgba(255,255,255,0.12)`,
+    borderRadius: theme.radius.sm,
+    padding: '0.4rem 0.75rem',
+    fontSize: '0.875rem',
+    color: theme.colors.textPrimary,
+    fontFamily: theme.fonts.body,
   },
   list:  { display: 'flex', flexDirection: 'column', gap: '0.75rem' },
-  info:  { color: '#6b7280', fontSize: '0.9rem' },
-  error: { color: '#dc2626', fontSize: '0.9rem' },
+  info:  { color: theme.colors.textMuted, fontFamily: theme.fonts.body, fontSize: '0.9rem' },
+  error: { color: theme.colors.danger,   fontFamily: theme.fonts.body, fontSize: '0.9rem' },
 };
 
 const cardStyles: Record<string, React.CSSProperties> = {
   card: {
-    background: '#fff', border: '1px solid #e5e7eb',
-    borderRadius: '8px', padding: '1rem 1.25rem',
-    display: 'flex', flexDirection: 'column', gap: '0.35rem',
+    background: theme.colors.surface,
+    border: `1px solid ${theme.colors.border}`,
+    borderRadius: theme.radius.md,
+    padding: '1rem 1.25rem',
+    boxShadow: theme.shadows.card,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.35rem',
   },
-  header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
-  badge: { fontSize: '0.75rem', fontWeight: 600, padding: '2px 10px', borderRadius: '999px' },
-  time:  { fontSize: '0.78rem', color: '#9ca3af' },
-  subject: { margin: 0, fontSize: '0.95rem', fontWeight: 600, color: '#111827' },
-  sender:  { margin: 0, fontSize: '0.82rem', color: '#6b7280' },
-  summary: { margin: 0, fontSize: '0.875rem', color: '#374151', lineHeight: 1.5 },
+  header:  { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
+  badge: {
+    fontFamily: theme.fonts.mono,
+    fontSize: '0.72rem',
+    fontWeight: 500,
+    padding: '2px 10px',
+    borderRadius: theme.radius.pill,
+  },
+  time:    { fontFamily: theme.fonts.mono, fontSize: '0.78rem', color: theme.colors.textMuted },
+  subject: { margin: 0, fontFamily: theme.fonts.heading, fontSize: '0.95rem', fontWeight: 600, color: theme.colors.textPrimary },
+  sender:  { margin: 0, fontFamily: theme.fonts.body, fontSize: '0.82rem', color: theme.colors.textSecondary },
+  summary: { margin: 0, fontFamily: theme.fonts.body, fontSize: '0.875rem', color: theme.colors.textSecondary, lineHeight: 1.6 },
 };

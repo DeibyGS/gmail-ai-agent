@@ -62,7 +62,7 @@ describe('EventDetailModal', () => {
     const onDelete = vi.fn();
     vi.spyOn(window, 'confirm').mockReturnValue(true);
     render(<EventDetailModal event={mockEvent} meta={mockMeta} onDelete={onDelete} onClose={vi.fn()} onMetaChange={vi.fn()} />);
-    fireEvent.click(screen.getByText('Eliminar evento'));
+    fireEvent.click(screen.getByText('Eliminar'));
     expect(onDelete).toHaveBeenCalledWith('evt-99');
     vi.restoreAllMocks();
   });
@@ -71,7 +71,7 @@ describe('EventDetailModal', () => {
     const onDelete = vi.fn();
     vi.spyOn(window, 'confirm').mockReturnValue(false);
     render(<EventDetailModal event={mockEvent} meta={mockMeta} onDelete={onDelete} onClose={vi.fn()} onMetaChange={vi.fn()} />);
-    fireEvent.click(screen.getByText('Eliminar evento'));
+    fireEvent.click(screen.getByText('Eliminar'));
     expect(onDelete).not.toHaveBeenCalled();
     vi.restoreAllMocks();
   });

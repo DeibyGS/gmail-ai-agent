@@ -1,4 +1,5 @@
 import type { CalendarEvent, EventMeta } from '../types';
+import { theme } from '../theme';
 
 interface Props {
   event: CalendarEvent;
@@ -40,7 +41,7 @@ export default function EventCard({ event, meta, onEdit, onDelete }: Props) {
 
   return (
     <div style={card}>
-      {/* Bloque de fecha con color de etiqueta */}
+      {/* Bloque de fecha — color de etiqueta con opacidad */}
       <div style={{ ...dateBlock, background: meta.color }}>
         <span style={dateDay}>{day}</span>
         <span style={dateMonth}>{month}</span>
@@ -104,44 +105,60 @@ function TrashIcon() {
 // ── Estilos ───────────────────────────────────────────────────────────────────
 
 const card: React.CSSProperties = {
-  display: 'flex', alignItems: 'stretch',
-  background: '#fff', border: '1px solid #e5e7eb',
-  borderRadius: '8px', overflow: 'hidden',
+  display: 'flex',
+  alignItems: 'stretch',
+  background: theme.colors.surface,
+  border: `1px solid ${theme.colors.border}`,
+  borderRadius: theme.radius.md,
+  overflow: 'hidden',
   marginBottom: '0.6rem',
-  boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
-  transition: 'box-shadow 0.15s',
+  boxShadow: theme.shadows.card,
+  transition: 'box-shadow 0.2s ease',
 };
 const dateBlock: React.CSSProperties = {
-  minWidth: '52px', display: 'flex',
-  flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+  minWidth: '52px',
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  justifyContent: 'center',
   padding: '0.75rem 0.5rem',
 };
-const dateDay: React.CSSProperties   = { color: '#fff', fontWeight: 700, fontSize: '1.4rem', lineHeight: 1 };
-const dateMonth: React.CSSProperties = { color: '#fff', fontSize: '0.7rem', textTransform: 'uppercase', marginTop: '2px' };
+const dateDay: React.CSSProperties   = { color: '#fff', fontFamily: theme.fonts.heading, fontWeight: 700, fontSize: '1.4rem', lineHeight: 1 };
+const dateMonth: React.CSSProperties = { color: '#fff', fontFamily: theme.fonts.mono, fontSize: '0.68rem', textTransform: 'uppercase', marginTop: '2px' };
 const content: React.CSSProperties   = { flex: 1, padding: '0.65rem 0.75rem', overflow: 'hidden' };
 const topRow: React.CSSProperties    = { display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.2rem', flexWrap: 'wrap' };
-const title: React.CSSProperties     = { fontWeight: 600, fontSize: '0.9rem', color: '#111827', flex: 1, minWidth: 0 };
+const title: React.CSSProperties     = { fontFamily: theme.fonts.heading, fontWeight: 600, fontSize: '0.9rem', color: theme.colors.textPrimary, flex: 1, minWidth: 0 };
 const badge: React.CSSProperties     = {
-  color: '#fff', borderRadius: '999px', padding: '1px 8px',
-  fontSize: '0.7rem', fontWeight: 600, whiteSpace: 'nowrap',
+  color: '#fff',
+  borderRadius: theme.radius.pill,
+  padding: '1px 8px',
+  fontFamily: theme.fonts.mono,
+  fontSize: '0.7rem',
+  fontWeight: 600,
+  whiteSpace: 'nowrap',
 };
-const timeText: React.CSSProperties  = { display: 'block', fontSize: '0.8rem', color: '#6b7280', marginBottom: '0.15rem' };
-const subText: React.CSSProperties   = { display: 'block', fontSize: '0.8rem', color: '#6b7280', marginBottom: '0.15rem' };
+const timeText: React.CSSProperties  = { display: 'block', fontFamily: theme.fonts.mono, fontSize: '0.8rem', color: theme.colors.textSecondary, marginBottom: '0.15rem' };
+const subText: React.CSSProperties   = { display: 'block', fontFamily: theme.fonts.body, fontSize: '0.8rem', color: theme.colors.textSecondary, marginBottom: '0.15rem' };
 const descText: React.CSSProperties  = {
   display: '-webkit-box', WebkitBoxOrient: 'vertical', WebkitLineClamp: 2,
-  overflow: 'hidden', fontSize: '0.78rem', color: '#9ca3af', marginTop: '0.2rem',
+  overflow: 'hidden', fontFamily: theme.fonts.body, fontSize: '0.78rem', color: theme.colors.textMuted, marginTop: '0.2rem',
 } as React.CSSProperties;
 const actions: React.CSSProperties   = {
   display: 'flex', flexDirection: 'column', justifyContent: 'center',
   gap: '0.3rem', padding: '0.5rem 0.6rem',
 };
-const btnEdit: React.CSSProperties   = {
-  background: '#f3f4f6', border: '1px solid #e5e7eb',
+const btnEdit: React.CSSProperties = {
+  background: theme.colors.surfaceHigh,
+  border: `1px solid ${theme.colors.border}`,
   borderRadius: '5px', padding: '5px 7px', cursor: 'pointer',
-  color: '#374151', display: 'flex', alignItems: 'center',
+  color: theme.colors.textSecondary,
+  display: 'flex', alignItems: 'center',
+  transition: 'all 0.15s ease',
 };
 const btnDelete: React.CSSProperties = {
-  background: '#fef2f2', border: '1px solid #fca5a5',
+  background: 'rgba(248,113,113,0.1)',
+  border: '1px solid rgba(248,113,113,0.3)',
   borderRadius: '5px', padding: '5px 7px', cursor: 'pointer',
-  color: '#ef4444', display: 'flex', alignItems: 'center',
+  color: theme.colors.danger,
+  display: 'flex', alignItems: 'center',
 };

@@ -1,9 +1,122 @@
+/* Base global — AI Futuristic Glow theme */
+
 *, *::before, *::after {
   box-sizing: border-box;
 }
 
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  color: #111827;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: #0B0F19;
+  color: #E5E7EB;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Space Grotesk', sans-serif;
+}
+
+/* Scrollbar oscuro y sutil */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #111827;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(99, 102, 241, 0.4);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(99, 102, 241, 0.6);
+}
+
+/* Animación "AI thinking..." — pulso en botón procesando */
+@keyframes ai-pulse {
+  0%, 100% { box-shadow: 0 0 8px rgba(99, 102, 241, 0.2); }
+  50%       { box-shadow: 0 0 24px rgba(99, 102, 241, 0.55); }
+}
+
+/* Animación de puntos suspensivos para textos de carga */
+@keyframes dots {
+  0%, 20%  { content: '.'; }
+  40%      { content: '..'; }
+  60%,100% { content: '...'; }
+}
+
+.ai-processing {
+  animation: ai-pulse 1.4s ease-in-out infinite;
+}
+
+/* ── Overrides react-big-calendar para dark theme ── */
+.rbc-calendar {
+  background: #111827;
+  color: #E5E7EB;
+  font-family: 'Inter', sans-serif;
+}
+.rbc-header {
+  background: #1a2234;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  color: #9CA3AF;
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 600;
+  padding: 0.5rem 0;
+}
+.rbc-month-view,
+.rbc-time-view,
+.rbc-agenda-view {
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+.rbc-day-bg + .rbc-day-bg {
+  border-color: rgba(255, 255, 255, 0.06) !important;
+}
+.rbc-month-row + .rbc-month-row {
+  border-color: rgba(255, 255, 255, 0.06) !important;
+}
+.rbc-off-range-bg {
+  background: rgba(0, 0, 0, 0.2);
+}
+.rbc-today {
+  background: rgba(99, 102, 241, 0.08);
+}
+.rbc-toolbar button {
+  color: #9CA3AF;
+  background: #1a2234;
+  border-color: rgba(255, 255, 255, 0.1);
+  font-family: 'Inter', sans-serif;
+}
+.rbc-toolbar button:hover {
+  background: rgba(99, 102, 241, 0.15);
+  color: #E5E7EB;
+}
+.rbc-toolbar button.rbc-active {
+  color: #E5E7EB;
+  background: rgba(99, 102, 241, 0.2);
+  border-color: rgba(99, 102, 241, 0.4);
+}
+.rbc-toolbar-label {
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 600;
+  color: #E5E7EB;
+}
+.rbc-show-more {
+  color: #818CF8;
+}
+.rbc-event {
+  border-radius: 4px !important;
+}
+.rbc-date-cell {
+  color: #9CA3AF;
+}
+.rbc-date-cell.rbc-now {
+  color: #818CF8;
+  font-weight: 700;
+}
+.rbc-agenda-date-cell,
+.rbc-agenda-time-cell {
+  color: #9CA3AF;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.82rem;
 }

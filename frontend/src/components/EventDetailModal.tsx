@@ -1,5 +1,6 @@
 import type { CalendarEvent, EventMeta } from '../types';
 import { LABEL_OPTIONS } from './EventCreateModal';
+import { theme, btnStyles } from '../theme';
 
 interface Props {
   event: CalendarEvent;
@@ -11,15 +12,18 @@ interface Props {
 }
 
 export default function EventDetailModal({ event, meta, onDelete, onClose, onMetaChange, onEdit }: Props) {
-  const isFromEmail = Boolean(event.description?.includes('📧') || event.description?.toLowerCase().includes('email'));
+  const isFromEmail = Boolean(
+    event.description?.includes('📧') || event.description?.toLowerCase().includes('email')
+  );
 
   const fmt = (iso: string) => {
     try {
       const d = new Date(iso);
-      return d.toLocaleString('es-ES', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-    } catch {
-      return iso;
-    }
+      return d.toLocaleString('es-ES', {
+        day: '2-digit', month: 'long', year: 'numeric',
+        hour: '2-digit', minute: '2-digit',
+      });
+    } catch { return iso; }
   };
 
   return (
@@ -58,7 +62,12 @@ export default function EventDetailModal({ event, meta, onDelete, onClose, onMet
           )}
           {event.link && (
             <div style={field}>
-              <a href={event.link} target="_blank" rel="noopener noreferrer" style={{ color: '#4f46e5', fontSize: '0.85rem' }}>
+              <a
+                href={event.link}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ color: theme.colors.gradientStart, fontSize: '0.85rem', fontFamily: theme.fonts.body }}
+              >
                 Ver en Google Calendar →
               </a>
             </div>
@@ -75,7 +84,8 @@ export default function EventDetailModal({ event, meta, onDelete, onClose, onMet
                   style={{
                     ...labelBtn,
                     background: opt.color,
-                    outline: meta.color === opt.color ? '2px solid #000' : 'none',
+                    outline: meta.color === opt.color ? `2px solid ${theme.colors.textPrimary}` : 'none',
+                    outlineOffset: '2px',
                   }}
                   title={opt.label}
                 >
@@ -87,17 +97,21 @@ export default function EventDetailModal({ event, meta, onDelete, onClose, onMet
         </div>
 
         {/* Acciones */}
-        <div style={actions}>
+        <div style={actionsRow}>
           <button
-            style={btnDelete}
-            onClick={() => { if (window.confirm('¿Eliminar este evento de Google Calendar?')) onDelete(event.id); }}
+            style={btnStyles.danger}
+            onClick={() => {
+              if (window.confirm('¿Eliminar este evento de Google Calendar?')) onDelete(event.id);
+            }}
           >
-            Eliminar evento
+            Eliminar
           </button>
           {onEdit && (
-            <button style={btnEdit} onClick={() => { onClose(); onEdit(event); }}>Editar</button>
+            <button style={btnStyles.secondary} onClick={() => { onClose(); onEdit(event); }}>
+              Editar
+            </button>
           )}
-          <button style={btnClose} onClick={onClose}>Cerrar</button>
+          <button style={btnStyles.primary} onClick={onClose}>Cerrar</button>
         </div>
       </div>
     </div>
@@ -107,36 +121,86 @@ export default function EventDetailModal({ event, meta, onDelete, onClose, onMet
 // ── Estilos ───────────────────────────────────────────────────────────────────
 
 const overlay: React.CSSProperties = {
-  position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)',
-  display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000,
+  position: 'fixed',
+  inset: 0,
+  background: 'rgba(0,0,0,0.75)',
+  backdropFilter: 'blur(4px)',
+  WebkitBackdropFilter: 'blur(4px)',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  zIndex: 1000,
 };
 const modal: React.CSSProperties = {
-  background: '#fff', borderRadius: '10px', overflow: 'hidden',
-  width: '100%', maxWidth: '440px', boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
+  background: theme.colors.surface,
+  border: `1px solid ${theme.colors.border}`,
+  borderRadius: theme.radius.lg,
+  overflow: 'hidden',
+  width: '100%',
+  maxWidth: '440px',
+  boxShadow: theme.shadows.modal,
 };
 const header: React.CSSProperties = {
-  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+  display: 'flex',
+  justifyContent: 'space-between',
+  alignItems: 'center',
   padding: '1rem 1.25rem',
 };
-const headerTitle: React.CSSProperties = { color: '#fff', fontWeight: 700, fontSize: '1rem', flex: 1, marginRight: '1rem' };
-const closeBtn: React.CSSProperties = { background: 'none', border: 'none', color: '#fff', fontSize: '1.1rem', cursor: 'pointer' };
+const headerTitle: React.CSSProperties = {
+  color: '#fff',
+  fontFamily: theme.fonts.heading,
+  fontWeight: 700,
+  fontSize: '1rem',
+  flex: 1,
+  marginRight: '1rem',
+};
+const closeBtn: React.CSSProperties = {
+  background: 'none',
+  border: 'none',
+  color: '#fff',
+  fontSize: '1.1rem',
+  cursor: 'pointer',
+};
 const body: React.CSSProperties = { padding: '1.25rem' };
 const emailBadge: React.CSSProperties = {
-  background: '#eff6ff', color: '#2563eb', borderRadius: '6px',
-  padding: '0.4rem 0.75rem', fontSize: '0.8rem', marginBottom: '1rem',
+  background: 'rgba(99,102,241,0.12)',
+  color: '#818CF8',
+  border: '1px solid rgba(99,102,241,0.3)',
+  borderRadius: theme.radius.sm,
+  padding: '0.4rem 0.75rem',
+  fontFamily: theme.fonts.mono,
+  fontSize: '0.8rem',
+  marginBottom: '1rem',
 };
-const field: React.CSSProperties = { marginBottom: '0.65rem' };
-const fieldLabel: React.CSSProperties = { display: 'block', fontSize: '0.75rem', color: '#9ca3af', fontWeight: 600, marginBottom: '0.1rem' };
-const fieldValue: React.CSSProperties = { fontSize: '0.9rem', color: '#111827' };
+const field: React.CSSProperties      = { marginBottom: '0.65rem' };
+const fieldLabel: React.CSSProperties = {
+  display: 'block',
+  fontFamily: theme.fonts.body,
+  fontSize: '0.75rem',
+  color: theme.colors.textMuted,
+  fontWeight: 600,
+  marginBottom: '0.1rem',
+};
+const fieldValue: React.CSSProperties = {
+  fontFamily: theme.fonts.body,
+  fontSize: '0.9rem',
+  color: theme.colors.textPrimary,
+};
 const labelRow: React.CSSProperties = { display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '0.4rem' };
 const labelBtn: React.CSSProperties = {
-  color: '#fff', border: 'none', borderRadius: '999px',
-  padding: '3px 12px', fontSize: '0.78rem', cursor: 'pointer', fontWeight: 600,
+  color: '#fff',
+  border: 'none',
+  borderRadius: theme.radius.pill,
+  padding: '3px 12px',
+  fontFamily: theme.fonts.mono,
+  fontSize: '0.78rem',
+  cursor: 'pointer',
+  fontWeight: 600,
 };
-const actions: React.CSSProperties = {
-  display: 'flex', justifyContent: 'flex-end', gap: '0.5rem',
-  padding: '1rem 1.25rem', borderTop: '1px solid #e5e7eb',
+const actionsRow: React.CSSProperties = {
+  display: 'flex',
+  justifyContent: 'flex-end',
+  gap: '0.5rem',
+  padding: '1rem 1.25rem',
+  borderTop: `1px solid ${theme.colors.border}`,
 };
-const btnDelete: React.CSSProperties = { background: '#fef2f2', border: '1px solid #fca5a5', color: '#dc2626', borderRadius: '6px', padding: '0.45rem 1rem', cursor: 'pointer', fontSize: '0.875rem' };
-const btnEdit: React.CSSProperties   = { background: '#f3f4f6', border: '1px solid #d1d5db', borderRadius: '6px', padding: '0.45rem 1rem', cursor: 'pointer', fontSize: '0.875rem' };
-const btnClose: React.CSSProperties  = { background: '#4f46e5', color: '#fff', border: 'none', borderRadius: '6px', padding: '0.45rem 1rem', cursor: 'pointer', fontSize: '0.875rem', fontWeight: 600 };

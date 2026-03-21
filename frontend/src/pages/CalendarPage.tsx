@@ -12,6 +12,7 @@ import EventDetailModal from '../components/EventDetailModal';
 import EventEditModal from '../components/EventEditModal';
 import EventCard from '../components/EventCard';
 import { LABEL_OPTIONS } from '../components/EventCreateModal';
+import { theme, btnStyles } from '../theme';
 
 // ── Configuración del localizador de fechas ───────────────────────────────────
 const locales = { es };
@@ -85,6 +86,7 @@ export default function CalendarPage() {
         borderRadius: '4px',
         fontSize: '0.8rem',
         fontWeight: 600,
+        fontFamily: theme.fonts.body,
       },
     };
   };
@@ -162,7 +164,10 @@ export default function CalendarPage() {
             </span>
           ))}
         </div>
-        <button style={styles.btnNew} onClick={() => setCreateSlot(format(new Date(), 'yyyy-MM-dd'))}>
+        <button
+          style={btnStyles.primary}
+          onClick={() => setCreateSlot(format(new Date(), 'yyyy-MM-dd'))}
+        >
           + Nuevo evento
         </button>
       </div>
@@ -274,48 +279,75 @@ const MESSAGES_ES = {
 // ── Estilos ───────────────────────────────────────────────────────────────────
 const styles: Record<string, React.CSSProperties> = {
   page: {
-    display: 'flex', flexDirection: 'column',
-    height: 'calc(100vh - 60px)',
-    padding: '1rem 1.5rem', boxSizing: 'border-box',
+    display: 'flex',
+    flexDirection: 'column',
+    height: 'calc(100vh - 56px)',
+    padding: '1rem 1.5rem',
+    boxSizing: 'border-box',
   },
   header: {
-    display: 'flex', alignItems: 'center', gap: '0.75rem',
-    flexWrap: 'wrap', marginBottom: '0.5rem',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.75rem',
+    flexWrap: 'wrap',
+    marginBottom: '0.5rem',
   },
-  title: { margin: 0, fontSize: '1.25rem', fontWeight: 700, marginRight: 'auto' },
+  title: {
+    margin: 0,
+    fontFamily: theme.fonts.heading,
+    fontSize: '1.25rem',
+    fontWeight: 700,
+    marginRight: 'auto',
+    color: theme.colors.textPrimary,
+  },
   legend: { display: 'flex', gap: '0.4rem', flexWrap: 'wrap' },
   chip: {
-    color: '#fff', borderRadius: '999px',
-    padding: '2px 10px', fontSize: '0.75rem', fontWeight: 600,
-  },
-  btnNew: {
-    background: '#4f46e5', color: '#fff', border: 'none',
-    borderRadius: '6px', padding: '0.45rem 1rem',
-    cursor: 'pointer', fontWeight: 600, fontSize: '0.875rem',
+    color: '#fff',
+    borderRadius: theme.radius.pill,
+    padding: '2px 10px',
+    fontFamily: theme.fonts.mono,
+    fontSize: '0.72rem',
+    fontWeight: 600,
   },
   tabs: {
-    display: 'flex', gap: '0', marginBottom: '0.75rem',
-    borderBottom: '2px solid #e5e7eb',
+    display: 'flex',
+    gap: '0',
+    marginBottom: '0.75rem',
+    borderBottom: `2px solid ${theme.colors.border}`,
   },
   tab: {
-    background: 'none', border: 'none', padding: '0.5rem 1.1rem',
-    fontSize: '0.875rem', cursor: 'pointer', color: '#6b7280',
-    borderBottom: '2px solid transparent', marginBottom: '-2px',
+    background: 'none',
+    border: 'none',
+    padding: '0.5rem 1.1rem',
+    fontFamily: theme.fonts.body,
+    fontSize: '0.875rem',
+    cursor: 'pointer',
+    color: theme.colors.textMuted,
+    borderBottom: '2px solid transparent',
+    marginBottom: '-2px',
     fontWeight: 500,
+    transition: 'color 0.15s ease',
   },
   tabActive: {
-    color: '#4f46e5', borderBottom: '2px solid #4f46e5', fontWeight: 700,
+    color: '#818CF8',
+    borderBottom: `2px solid ${theme.colors.gradientStart}`,
+    fontWeight: 700,
   },
   listWrap: {
-    flex: 1, overflowY: 'auto', paddingRight: '2px',
+    flex: 1,
+    overflowY: 'auto',
+    paddingRight: '2px',
   },
   calendarWrap: {
-    flex: 1, minHeight: 0,
-    background: '#fff', borderRadius: '10px',
-    border: '1px solid #e5e7eb', padding: '0.75rem',
+    flex: 1,
+    minHeight: 0,
+    background: theme.colors.surface,
+    borderRadius: theme.radius.md,
+    border: `1px solid ${theme.colors.border}`,
+    padding: '0.75rem',
     overflow: 'hidden',
   },
-  empty: { color: '#9ca3af', fontSize: '0.9rem', marginTop: '2rem', textAlign: 'center' },
-  info:  { color: '#6b7280', fontSize: '0.9rem' },
-  error: { color: '#dc2626', fontSize: '0.9rem' },
+  empty: { color: theme.colors.textMuted, fontFamily: theme.fonts.body, fontSize: '0.9rem', marginTop: '2rem', textAlign: 'center' },
+  info:  { color: theme.colors.textMuted, fontFamily: theme.fonts.body, fontSize: '0.9rem' },
+  error: { color: theme.colors.danger,    fontFamily: theme.fonts.body, fontSize: '0.9rem' },
 };
