@@ -1,5 +1,8 @@
 from datetime import datetime, timedelta, timezone
+
 from googleapiclient.discovery import build
+from googleapiclient.errors import HttpError
+
 from config.settings import get_google_credentials
 
 
@@ -7,6 +10,52 @@ def get_calendar_service():
     """Crea y devuelve el cliente de la API de Google Calendar."""
     creds = get_google_credentials()
     return build("calendar", "v3", credentials=creds)
+
+
+# ── Creación de eventos ────────────────────────────────────────────────────────
+
+def create_event(
+    title: str,
+    date: str,
+    time: str | None = None,
+    location: str | None = None,
+    description: str | None = None,
+) -> dict:
+    """
+    Crea un evento en Google Calendar a partir de datos estructurados (creación manual).
+
+    Parámetros:
+        title       — Título del evento (obligatorio)
+        date        — Fecha en formato "YYYY-MM-DD" (obligatorio)
+        time        — Hora en formato "HH:MM" (opcional → evento de día completo)
+        location    — Ubicación o enlace (opcional)
+        description — Descripción (opcional)
+
+    Devuelve el evento creado normalizado por _parse_event.
+    Lanza ValueError si faltan campos obligatorios.
+    """
+    if not title or not date:
+        raise ValueError("'title' y 'date' son obligatorios para crear un evento.")
+
+    event_data = {
+        "title": title,
+        "date": date,
+        "time": time,
+        "location": location,
+        "description": description,
+    }
+
+    event_body = _build_event_body(event_data)
+    service = get_calendar_service()
+
+    created = service.events().insert(
+        calendarId="primary",
+        body=event_body,
+    ).execute()
+
+    print(f"Evento creado: {created.get('summary')} (id={created.get('id')}) → {created.get('htmlLink')}")
+    # Normalizar antes de devolver: el frontend espera start/end como ISO strings planos.
+    return _parse_event(created)
 
 
 def create_event_from_email(event_data: dict) -> dict | None:
@@ -22,27 +71,23 @@ def create_event_from_email(event_data: dict) -> dict | None:
         "description": "Revisión semanal del proyecto"
     }
 
-    Devuelve el evento creado o None si no hay suficientes datos.
+    Devuelve el evento creado normalizado o None si no hay suficientes datos.
     """
     if not event_data:
         return None
 
-    # Necesitamos al menos título y fecha para crear un evento
     if not event_data.get("title") or not event_data.get("date"):
         return None
 
     event_body = _build_event_body(event_data)
     service = get_calendar_service()
 
-    # 'primary' es el calendario principal del usuario
     created = service.events().insert(
         calendarId="primary",
-        body=event_body
+        body=event_body,
     ).execute()
 
-    print(f"Evento creado: {created.get('summary')} → {created.get('htmlLink')}")
-    # Normalizar antes de retornar: el frontend espera start/end como strings planos,
-    # no como objetos {dateTime: ..., timeZone: ...} que devuelve la API de Google.
+    print(f"Evento creado desde email: {created.get('summary')} → {created.get('htmlLink')}")
     return _parse_event(created)
 
 
@@ -50,8 +95,9 @@ def _build_event_body(event_data: dict) -> dict:
     """
     Construye el cuerpo del evento en el formato que espera la API de Google Calendar.
 
-    Si no hay hora definida → crea un evento de día completo (allDay)
-    Si hay hora definida → crea un evento con hora de inicio y fin (1 hora de duración)
+    Sin hora → evento de día completo (allDay). El end.date es el día siguiente
+    (Google Calendar usa extremo exclusivo para fechas).
+    Con hora → evento de 1 hora de duración con timezone Europe/Madrid.
     """
     title = event_data.get("title") or "Evento sin título"
     date_str = event_data.get("date")
@@ -62,58 +108,60 @@ def _build_event_body(event_data: dict) -> dict:
     if time_str:
         # Evento con hora específica
         start_dt = datetime.strptime(f"{date_str} {time_str}", "%Y-%m-%d %H:%M")
-        end_dt = start_dt + timedelta(hours=1)  # Duración por defecto: 1 hora
+        end_dt = start_dt + timedelta(hours=1)
 
         start = {"dateTime": start_dt.isoformat(), "timeZone": "Europe/Madrid"}
         end = {"dateTime": end_dt.isoformat(), "timeZone": "Europe/Madrid"}
     else:
-        # Evento de día completo (sin hora)
+        # Evento de día completo — end.date debe ser el día siguiente (extremo exclusivo)
+        next_day = (datetime.strptime(date_str, "%Y-%m-%d") + timedelta(days=1)).strftime("%Y-%m-%d")
         start = {"date": date_str}
-        end = {"date": date_str}
+        end = {"date": next_day}
 
-    event_body = {
-        "summary": title,
-        "start": start,
-        "end": end,
-    }
+    event_body: dict = {"summary": title, "start": start, "end": end}
 
     if location:
         event_body["location"] = location
-
     if description:
         event_body["description"] = description
 
     return event_body
 
 
+# ── Eliminación de eventos ─────────────────────────────────────────────────────
+
 def delete_event(event_id: str) -> bool:
     """
     Elimina un evento de Google Calendar por su ID.
 
-    Devuelve True si se eliminó correctamente, False si no existe (404/410).
-    Lanza excepción con mensaje descriptivo si hay un error de API inesperado.
+    Devuelve True si se eliminó correctamente.
+    Devuelve False si no existe (404) o ya fue eliminado (410).
+    Lanza RuntimeError con mensaje descriptivo para cualquier otro error de API.
     """
     service = get_calendar_service()
     try:
         service.events().delete(calendarId="primary", eventId=event_id).execute()
-        print(f"Evento eliminado: {event_id}")
+        print(f"Evento eliminado: id={event_id}")
         return True
-    except Exception as e:
-        error_str = str(e)
-        print(f"ERROR delete_event(id={event_id}): {type(e).__name__}: {error_str}")
-        # Google Calendar devuelve 410 Gone si el evento ya fue eliminado
-        if "410" in error_str or "404" in error_str:
+    except HttpError as e:
+        status = e.resp.status
+        print(f"ERROR delete_event(id={event_id}): HttpError {status}: {e.reason}")
+        if status in (404, 410):
+            # 404 = no encontrado · 410 = ya eliminado (Gone)
             return False
-        # Propagar con mensaje descriptivo para que el router lo muestre al frontend
-        raise RuntimeError(f"{type(e).__name__}: {error_str}") from e
+        raise RuntimeError(f"Error de Google Calendar (HTTP {status}): {e.reason}") from e
+    except Exception as e:
+        print(f"ERROR delete_event(id={event_id}): {type(e).__name__}: {e}")
+        raise RuntimeError(f"{type(e).__name__}: {e}") from e
 
+
+# ── Listado de eventos ─────────────────────────────────────────────────────────
 
 def get_upcoming_events(max_results: int = 10) -> list[dict]:
     """
     Obtiene los próximos eventos del calendario del usuario.
 
-    Usado por el dashboard para mostrar el calendario en el frontend.
-    Devuelve eventos desde ahora hasta los próximos 30 días.
+    Devuelve eventos desde ahora hasta los próximos 30 días, normalizados.
     """
     service = get_calendar_service()
 
@@ -126,29 +174,30 @@ def get_upcoming_events(max_results: int = 10) -> list[dict]:
         timeMax=thirty_days,
         maxResults=max_results,
         singleEvents=True,
-        orderBy="startTime"
+        orderBy="startTime",
     ).execute()
 
     events = result.get("items", [])
-
-    # Normalizamos la respuesta para que sea más fácil de usar en el frontend
     return [_parse_event(e) for e in events]
 
+
+# ── Normalización ──────────────────────────────────────────────────────────────
 
 def _parse_event(event: dict) -> dict:
     """
     Normaliza un evento de Google Calendar a un diccionario simple.
 
     Los eventos pueden tener 'dateTime' (con hora) o 'date' (día completo).
+    Garantiza que 'start' y 'end' siempre sean strings (nunca None ni objetos).
     """
-    start = event.get("start", {})
-    end = event.get("end", {})
+    start_obj = event.get("start") or {}
+    end_obj = event.get("end") or {}
 
     return {
-        "id": event.get("id"),
-        "title": event.get("summary", "Sin título"),
-        "start": start.get("dateTime") or start.get("date"),
-        "end": end.get("dateTime") or end.get("date"),
+        "id": event.get("id") or "",
+        "title": event.get("summary") or "Sin título",
+        "start": start_obj.get("dateTime") or start_obj.get("date") or "",
+        "end": end_obj.get("dateTime") or end_obj.get("date") or "",
         "location": event.get("location"),
         "description": event.get("description"),
         "link": event.get("htmlLink"),

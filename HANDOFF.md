@@ -16,9 +16,10 @@
 ---
 
 ## Estado actual
-- **Progreso:** 97% (13 PRs mergeados)
+- **Progreso:** 98% (13 PRs mergeados + PR #14 en revisión)
 - **Último PR mergeado:** PR #13 — `test(frontend): Vitest + RTL + coverage`
-- **Rama activa al cerrar:** `feature/frontend-tests` (upstream desaparecido — hacer checkout a main)
+- **Rama activa:** `feature/ui-redesign-glow` (PR #14 abierto, NO mergear sin revisión)
+- **Último fix:** bugs calendar delete/edit "not found" + create NaN invalid date
 
 ---
 
