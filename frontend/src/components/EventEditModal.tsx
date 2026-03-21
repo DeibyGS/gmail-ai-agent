@@ -133,10 +133,11 @@ export default function EventEditModal({ event, currentMeta, onConfirm, onClose 
         )}
 
         <div style={actionsRow}>
-          <button style={{ ...btnStyles.secondary, opacity: saving ? 0.6 : 1 }} onClick={onClose} disabled={saving}>
+          <button className="btn-secondary" style={{ ...btnStyles.secondary, opacity: saving ? 0.6 : 1 }} onClick={onClose} disabled={saving}>
             Cancelar
           </button>
           <button
+            className="btn-primary"
             style={{ ...btnStyles.primary, opacity: saving ? 0.6 : 1 }}
             onClick={handleSubmit}
             disabled={saving}

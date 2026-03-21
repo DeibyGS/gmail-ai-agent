@@ -99,6 +99,7 @@ export default function EventDetailModal({ event, meta, onDelete, onClose, onMet
         {/* Acciones */}
         <div style={actionsRow}>
           <button
+            className="btn-danger"
             style={btnStyles.danger}
             onClick={() => {
               if (window.confirm('¿Eliminar este evento de Google Calendar?')) onDelete(event.id);
@@ -107,11 +108,11 @@ export default function EventDetailModal({ event, meta, onDelete, onClose, onMet
             Eliminar
           </button>
           {onEdit && (
-            <button style={btnStyles.secondary} onClick={() => { onClose(); onEdit(event); }}>
+            <button className="btn-secondary" style={btnStyles.secondary} onClick={() => { onClose(); onEdit(event); }}>
               Editar
             </button>
           )}
-          <button style={btnStyles.primary} onClick={onClose}>Cerrar</button>
+          <button className="btn-primary" style={btnStyles.primary} onClick={onClose}>Cerrar</button>
         </div>
       </div>
     </div>

@@ -5,6 +5,7 @@ import { format, parse, startOfWeek, getDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 
+import { toast } from 'sonner';
 import type { CalendarEvent, EventMeta, CreateEventPayload } from '../types';
 import { fetchCalendarEvents, createCalendarEvent, deleteCalendarEvent } from '../services/api';
 import EventCreateModal from '../components/EventCreateModal';
@@ -101,30 +102,35 @@ export default function CalendarPage() {
   };
 
   const handleCreate = async (payload: CreateEventPayload, meta: EventMeta) => {
+    const toastId = toast.loading('Creando evento...');
     try {
       const created = await createCalendarEvent(payload);
       setEvents(prev => [...prev, created]);
       setLocalMeta(prev => ({ ...prev, [created.id]: meta }));
+      toast.success('Evento creado correctamente', { id: toastId });
     } catch {
-      alert('Error al crear el evento en Google Calendar.');
+      toast.error('Error al crear el evento en Google Calendar', { id: toastId });
     } finally {
       setCreateSlot(null);
     }
   };
 
   const handleDelete = async (id: string) => {
+    const toastId = toast.loading('Eliminando evento...');
     try {
       await deleteCalendarEvent(id);
       setEvents(prev => prev.filter(e => e.id !== id));
       setLocalMeta(prev => { const n = { ...prev }; delete n[id]; return n; });
       setDetailEvent(null);
+      toast.success('Evento eliminado', { id: toastId });
     } catch {
-      alert('Error al eliminar el evento.');
+      toast.error('Error al eliminar el evento', { id: toastId });
     }
   };
 
   // Editar = DELETE antiguo + POST nuevo
   const handleEdit = async (oldId: string, payload: CreateEventPayload, meta: EventMeta) => {
+    const toastId = toast.loading('Guardando cambios...');
     try {
       await deleteCalendarEvent(oldId);
       const created = await createCalendarEvent(payload);
@@ -134,8 +140,9 @@ export default function CalendarPage() {
         delete n[oldId];
         return { ...n, [created.id]: meta };
       });
+      toast.success('Evento actualizado correctamente', { id: toastId });
     } catch {
-      alert('Error al guardar los cambios.');
+      toast.error('Error al guardar los cambios', { id: toastId });
     } finally {
       setEditEvent(null);
     }
@@ -165,6 +172,7 @@ export default function CalendarPage() {
           ))}
         </div>
         <button
+          className="btn-primary"
           style={btnStyles.primary}
           onClick={() => setCreateSlot(format(new Date(), 'yyyy-MM-dd'))}
         >

@@ -33,6 +33,57 @@ h1, h2, h3, h4, h5, h6 {
   background: rgba(99, 102, 241, 0.6);
 }
 
+/* ── Hover effects para botones ── */
+
+/* Botón primario: gradiente con glow violeta al pasar */
+.btn-primary {
+  transition: box-shadow 0.2s ease, transform 0.15s ease !important;
+}
+.btn-primary:hover:not(:disabled) {
+  box-shadow: 0 0 28px rgba(99, 102, 241, 0.55), 0 4px 16px rgba(168, 85, 247, 0.3) !important;
+  transform: translateY(-1px);
+}
+.btn-primary:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+/* Botón secundario: borde sutil con glow al pasar */
+.btn-secondary {
+  transition: border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease !important;
+}
+.btn-secondary:hover:not(:disabled) {
+  border-color: rgba(99, 102, 241, 0.5) !important;
+  color: #E5E7EB !important;
+  box-shadow: 0 0 12px rgba(99, 102, 241, 0.15) !important;
+}
+
+/* Botón danger: glow rojo al pasar */
+.btn-danger {
+  transition: box-shadow 0.2s ease, background 0.2s ease !important;
+}
+.btn-danger:hover:not(:disabled) {
+  box-shadow: 0 0 16px rgba(248, 113, 113, 0.35) !important;
+  background: rgba(248, 113, 113, 0.2) !important;
+}
+
+/* Botones de icono (edit/delete en EventCard) */
+.btn-icon-edit {
+  transition: all 0.15s ease !important;
+}
+.btn-icon-edit:hover {
+  background: rgba(99, 102, 241, 0.15) !important;
+  border-color: rgba(99, 102, 241, 0.4) !important;
+  color: #818CF8 !important;
+}
+
+.btn-icon-delete {
+  transition: all 0.15s ease !important;
+}
+.btn-icon-delete:hover {
+  box-shadow: 0 0 12px rgba(248, 113, 113, 0.3) !important;
+  background: rgba(248, 113, 113, 0.22) !important;
+}
+
 /* Animación "AI thinking..." — pulso en botón procesando */
 @keyframes ai-pulse {
   0%, 100% { box-shadow: 0 0 8px rgba(99, 102, 241, 0.2); }
@@ -75,26 +126,38 @@ h1, h2, h3, h4, h5, h6 {
 .rbc-month-row + .rbc-month-row {
   border-color: rgba(255, 255, 255, 0.06) !important;
 }
+/* Días fuera del mes actual: fondo levemente más oscuro, sin gris roto */
 .rbc-off-range-bg {
-  background: rgba(0, 0, 0, 0.2);
+  background: rgba(11, 15, 25, 0.6);
 }
+.rbc-off-range .rbc-date-cell {
+  color: rgba(107, 114, 128, 0.45) !important;
+}
+
+/* Día actual: acento sutil violeta, sin gris contrastante */
 .rbc-today {
-  background: rgba(99, 102, 241, 0.08);
+  background: rgba(99, 102, 241, 0.06);
+}
+.rbc-today .rbc-date-cell {
+  color: #818CF8 !important;
 }
 .rbc-toolbar button {
-  color: #9CA3AF;
+  color: #E5E7EB;
   background: #1a2234;
-  border-color: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.15);
   font-family: 'Inter', sans-serif;
+  font-weight: 500;
 }
 .rbc-toolbar button:hover {
-  background: rgba(99, 102, 241, 0.15);
-  color: #E5E7EB;
+  background: rgba(99, 102, 241, 0.2);
+  color: #fff;
+  border-color: rgba(99, 102, 241, 0.4);
 }
 .rbc-toolbar button.rbc-active {
-  color: #E5E7EB;
-  background: rgba(99, 102, 241, 0.2);
-  border-color: rgba(99, 102, 241, 0.4);
+  color: #fff;
+  background: rgba(99, 102, 241, 0.28);
+  border-color: rgba(99, 102, 241, 0.55);
+  font-weight: 600;
 }
 .rbc-toolbar-label {
   font-family: 'Space Grotesk', sans-serif;

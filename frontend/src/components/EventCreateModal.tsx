@@ -123,8 +123,9 @@ export default function EventCreateModal({ initialDate = '', onConfirm, onClose 
         )}
 
         <div style={actionsRow}>
-          <button style={btnStyles.secondary} onClick={onClose}>Cancelar</button>
+          <button className="btn-secondary" style={btnStyles.secondary} onClick={onClose}>Cancelar</button>
           <button
+            className="btn-primary"
             style={{ ...btnStyles.primary, opacity: saving ? 0.6 : 1 }}
             onClick={handleSubmit}
             disabled={saving}

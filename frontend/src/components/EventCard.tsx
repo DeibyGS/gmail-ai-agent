@@ -69,10 +69,10 @@ export default function EventCard({ event, meta, onEdit, onDelete }: Props) {
 
       {/* Acciones */}
       <div style={actions}>
-        <button style={btnEdit} onClick={() => onEdit(event)} title="Editar evento">
+        <button className="btn-icon-edit" style={btnEdit} onClick={() => onEdit(event)} title="Editar evento">
           <PencilIcon />
         </button>
-        <button style={btnDelete} onClick={handleDelete} title="Eliminar evento">
+        <button className="btn-icon-delete" style={btnDelete} onClick={handleDelete} title="Eliminar evento">
           <TrashIcon />
         </button>
       </div>

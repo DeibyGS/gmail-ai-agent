@@ -76,7 +76,7 @@ export default function EmailsPage() {
       <div style={styles.header}>
         <h1 style={styles.title}>Correos</h1>
         <button
-          className={processing ? 'ai-processing' : ''}
+          className={`btn-primary${processing ? ' ai-processing' : ''}`}
           style={{ ...btnStyles.primary, opacity: processing ? 0.7 : 1 }}
           onClick={handleProcess}
           disabled={processing}
@@ -108,9 +108,7 @@ export default function EmailsPage() {
       {activeTab === 'pending' && (
         <>
           {loading && <p style={styles.info}>Cargando correos pendientes...</p>}
-          {!loading && pending.length === 0 && (
-            <p style={styles.info}>No hay correos no leídos. ¡Bandeja al día!</p>
-          )}
+          {!loading && pending.length === 0 && <EmptyInboxCard />}
           <div style={styles.list}>
             {pending.map(email => <EmailCard key={email.id} email={email} />)}
           </div>
@@ -151,7 +149,7 @@ export default function EmailsPage() {
               <option value="">Todas las categorías</option>
               {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
-            <button style={btnStyles.secondary} onClick={handleHistoryFilter}>
+            <button className="btn-secondary" style={btnStyles.secondary} onClick={handleHistoryFilter}>
               Filtrar
             </button>
           </div>
@@ -170,6 +168,72 @@ export default function EmailsPage() {
     </div>
   );
 }
+
+// ── Componente interno: empty state bandeja vacía ────────────────────────────
+
+function EmptyInboxCard() {
+  return (
+    <div style={emptyCard.wrap}>
+      <div style={emptyCard.icon}>📬</div>
+      <h2 style={emptyCard.title}>¡Todo al día!</h2>
+      <p style={emptyCard.subtitle}>
+        Tu bandeja está completamente vacía.<br />
+        No hay correos pendientes por procesar.
+      </p>
+      <div style={emptyCard.pill}>✨ Sin correos pendientes</div>
+    </div>
+  );
+}
+
+const emptyCard: Record<string, React.CSSProperties> = {
+  wrap: {
+    marginTop: '2rem',
+    padding: '2.5rem 2rem',
+    background: 'rgba(17, 24, 39, 0.7)',
+    backdropFilter: 'blur(12px)',
+    WebkitBackdropFilter: 'blur(12px)',
+    border: '1px solid rgba(99, 102, 241, 0.2)',
+    borderRadius: '16px',
+    boxShadow: '0 0 40px rgba(99, 102, 241, 0.08), 0 4px 24px rgba(0,0,0,0.4)',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: '0.75rem',
+    textAlign: 'center',
+  },
+  icon: {
+    fontSize: '3.5rem',
+    lineHeight: 1,
+    marginBottom: '0.25rem',
+  },
+  title: {
+    margin: 0,
+    fontFamily: theme.fonts.heading,
+    fontSize: '1.4rem',
+    fontWeight: 700,
+    background: theme.gradients.primary,
+    WebkitBackgroundClip: 'text',
+    WebkitTextFillColor: 'transparent',
+    backgroundClip: 'text',
+  },
+  subtitle: {
+    margin: 0,
+    fontFamily: theme.fonts.body,
+    fontSize: '0.9rem',
+    color: theme.colors.textSecondary,
+    lineHeight: 1.6,
+  },
+  pill: {
+    marginTop: '0.5rem',
+    fontFamily: theme.fonts.mono,
+    fontSize: '0.75rem',
+    color: '#34D399',
+    background: 'rgba(52, 211, 153, 0.1)',
+    border: '1px solid rgba(52, 211, 153, 0.25)',
+    borderRadius: theme.radius.pill,
+    padding: '4px 14px',
+  },
+};
 
 // ── Componente interno: tarjeta de correo procesado ──────────────────────────
 

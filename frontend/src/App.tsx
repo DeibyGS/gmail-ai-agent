@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { Toaster } from 'sonner';
 import Navbar from './components/Navbar';
 import EmailsPage from './pages/EmailsPage';
 import StatsPage from './pages/StatsPage';
@@ -16,6 +17,20 @@ export default function App() {
           <Route path="/stats" element={<StatsPage />} />
           <Route path="/calendar" element={<CalendarPage />} />
         </Routes>
+        {/* Toast notifications globales — tema dark con acento del design system */}
+        <Toaster
+          theme="dark"
+          position="bottom-right"
+          toastOptions={{
+            style: {
+              background: '#1a2234',
+              border: '1px solid rgba(99,102,241,0.25)',
+              color: '#E5E7EB',
+              fontFamily: "'Inter', sans-serif",
+              fontSize: '0.875rem',
+            },
+          }}
+        />
       </div>
     </BrowserRouter>
   );

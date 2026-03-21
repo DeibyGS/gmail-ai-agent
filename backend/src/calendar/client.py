@@ -41,7 +41,9 @@ def create_event_from_email(event_data: dict) -> dict | None:
     ).execute()
 
     print(f"Evento creado: {created.get('summary')} → {created.get('htmlLink')}")
-    return created
+    # Normalizar antes de retornar: el frontend espera start/end como strings planos,
+    # no como objetos {dateTime: ..., timeZone: ...} que devuelve la API de Google.
+    return _parse_event(created)
 
 
 def _build_event_body(event_data: dict) -> dict:
