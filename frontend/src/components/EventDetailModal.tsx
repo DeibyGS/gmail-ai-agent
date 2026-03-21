@@ -13,6 +13,30 @@ interface Props {
   onEdit?: (event: CalendarEvent) => void;
 }
 
+// Convierte un RRULE string a texto legible en español
+function formatRRULE(rrules: string[]): string {
+  const raw = rrules[0] ?? '';
+  if (raw.includes('FREQ=DAILY')) return 'Todos los días';
+  if (raw.includes('FREQ=WEEKLY')) {
+    const match = raw.match(/BYDAY=([A-Z,]+)/);
+    if (match) {
+      const dayMap: Record<string, string> = {
+        MO: 'Lunes', TU: 'Martes', WE: 'Miércoles',
+        TH: 'Jueves', FR: 'Viernes', SA: 'Sábado', SU: 'Domingo',
+      };
+      const days = match[1].split(',').map(d => dayMap[d] ?? d).join(', ');
+      return `Cada semana · ${days}`;
+    }
+    return 'Cada semana';
+  }
+  if (raw.includes('FREQ=MONTHLY')) {
+    const match = raw.match(/BYMONTHDAY=(\d+)/);
+    if (match) return `Cada mes · día ${match[1]}`;
+    return 'Cada mes';
+  }
+  return raw;
+}
+
 export default function EventDetailModal({ event, meta, onDelete, onClose, onMetaChange, onEdit }: Props) {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const isFromEmail = Boolean(
@@ -59,6 +83,14 @@ export default function EventDetailModal({ event, meta, onDelete, onClose, onMet
             <span style={fieldLabel}>Fin</span>
             <span style={fieldValue}>{fmt(event.end)}</span>
           </div>
+          {event.recurrence && event.recurrence.length > 0 && (
+            <div style={field}>
+              <span style={fieldLabel}>Recurrencia</span>
+              <span style={{ ...fieldValue, color: theme.colors.accent }}>
+                🔁 {formatRRULE(event.recurrence)}
+              </span>
+            </div>
+          )}
           {event.location && (
             <div style={field}>
               <span style={fieldLabel}>Ubicación</span>

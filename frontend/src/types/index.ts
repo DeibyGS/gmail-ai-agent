@@ -35,6 +35,7 @@ export interface CalendarEvent {
   location?: string;
   description?: string;
   link?: string;
+  recurrence?: string[] | null;  // Lista de RRULE strings, ej: ["RRULE:FREQ=WEEKLY;BYDAY=MO"]
 }
 
 // Metadatos locales del evento (color + etiqueta — no se persisten en backend)
