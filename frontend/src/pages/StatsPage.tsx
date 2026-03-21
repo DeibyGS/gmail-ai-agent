@@ -6,6 +6,7 @@ import {
 } from 'recharts';
 import type { CategoryStats, DailyVolume, SenderStat } from '../types';
 import { fetchCategoryStats, fetchDailyStats, fetchTopSenders } from '../services/api';
+import Spinner from '../components/Spinner';
 import { theme } from '../theme';
 
 // Colores para gráficas — adaptados al dark theme
@@ -52,7 +53,7 @@ export default function StatsPage() {
     load();
   }, []);
 
-  if (loading) return <div style={styles.page}><p style={styles.info}>Cargando estadísticas...</p></div>;
+  if (loading) return <div style={styles.page}><Spinner label="Cargando estadísticas..." /></div>;
   if (error)   return <div style={styles.page}><p style={styles.error}>{error}</p></div>;
 
   // Datos para el donut

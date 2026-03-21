@@ -87,7 +87,8 @@ def remove_calendar_event(event_id: str) -> None:
     try:
         found = delete_event(event_id)
     except Exception as e:
-        raise HTTPException(status_code=502, detail=f"Error al eliminar evento: {e}")
+        # El mensaje ya viene descriptivo desde delete_event (tipo + detalle)
+        raise HTTPException(status_code=502, detail=f"Error al eliminar evento en Google Calendar: {e}")
 
     if not found:
-        raise HTTPException(status_code=404, detail="Evento no encontrado o ya eliminado.")
+        raise HTTPException(status_code=404, detail="Evento no encontrado o ya eliminado en Google Calendar.")

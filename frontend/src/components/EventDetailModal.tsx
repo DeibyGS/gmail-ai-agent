@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import type { CalendarEvent, EventMeta } from '../types';
 import { LABEL_OPTIONS } from './EventCreateModal';
+import ConfirmModal from './ConfirmModal';
 import { theme, btnStyles } from '../theme';
 
 interface Props {
@@ -12,6 +14,7 @@ interface Props {
 }
 
 export default function EventDetailModal({ event, meta, onDelete, onClose, onMetaChange, onEdit }: Props) {
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const isFromEmail = Boolean(
     event.description?.includes('📧') || event.description?.toLowerCase().includes('email')
   );
@@ -27,6 +30,14 @@ export default function EventDetailModal({ event, meta, onDelete, onClose, onMet
   };
 
   return (
+    <>
+    <ConfirmModal
+      isOpen={confirmOpen}
+      title="Eliminar evento"
+      message="¿Eliminar este evento de Google Calendar? Esta acción no se puede deshacer."
+      onConfirm={() => onDelete(event.id)}
+      onClose={() => setConfirmOpen(false)}
+    />
     <div style={overlay}>
       <div style={modal}>
         {/* Header con color de la etiqueta */}
@@ -101,9 +112,7 @@ export default function EventDetailModal({ event, meta, onDelete, onClose, onMet
           <button
             className="btn-danger"
             style={btnStyles.danger}
-            onClick={() => {
-              if (window.confirm('¿Eliminar este evento de Google Calendar?')) onDelete(event.id);
-            }}
+            onClick={() => setConfirmOpen(true)}
           >
             Eliminar
           </button>
@@ -116,6 +125,7 @@ export default function EventDetailModal({ event, meta, onDelete, onClose, onMet
         </div>
       </div>
     </div>
+    </>
   );
 }
 

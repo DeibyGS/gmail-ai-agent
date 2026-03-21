@@ -1,4 +1,6 @@
+import { useState } from 'react';
 import type { CalendarEvent, EventMeta } from '../types';
+import ConfirmModal from './ConfirmModal';
 import { theme } from '../theme';
 
 interface Props {
@@ -32,14 +34,17 @@ export default function EventCard({ event, meta, onEdit, onDelete }: Props) {
   const startTime = fmtTime(event.start);
   const endTime   = fmtTime(event.end);
   const showTime  = startTime && startTime !== '00:00';
-
-  const handleDelete = () => {
-    if (window.confirm(`¿Eliminar "${event.title}" de Google Calendar?`)) {
-      onDelete(event.id);
-    }
-  };
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   return (
+    <>
+    <ConfirmModal
+      isOpen={confirmOpen}
+      title="Eliminar evento"
+      message={`¿Eliminar "${event.title}" de Google Calendar? Esta acción no se puede deshacer.`}
+      onConfirm={() => onDelete(event.id)}
+      onClose={() => setConfirmOpen(false)}
+    />
     <div style={card}>
       {/* Bloque de fecha — color de etiqueta con opacidad */}
       <div style={{ ...dateBlock, background: meta.color }}>
@@ -72,11 +77,12 @@ export default function EventCard({ event, meta, onEdit, onDelete }: Props) {
         <button className="btn-icon-edit" style={btnEdit} onClick={() => onEdit(event)} title="Editar evento">
           <PencilIcon />
         </button>
-        <button className="btn-icon-delete" style={btnDelete} onClick={handleDelete} title="Eliminar evento">
+        <button className="btn-icon-delete" style={btnDelete} onClick={() => setConfirmOpen(true)} title="Eliminar evento">
           <TrashIcon />
         </button>
       </div>
     </div>
+    </>
   );
 }
 

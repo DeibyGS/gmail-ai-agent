@@ -7,7 +7,8 @@ import 'react-big-calendar/lib/css/react-big-calendar.css';
 
 import { toast } from 'sonner';
 import type { CalendarEvent, EventMeta, CreateEventPayload } from '../types';
-import { fetchCalendarEvents, createCalendarEvent, deleteCalendarEvent } from '../services/api';
+import { fetchCalendarEvents, createCalendarEvent, deleteCalendarEvent, getApiError } from '../services/api';
+import Spinner from '../components/Spinner';
 import EventCreateModal from '../components/EventCreateModal';
 import EventDetailModal from '../components/EventDetailModal';
 import EventEditModal from '../components/EventEditModal';
@@ -108,8 +109,8 @@ export default function CalendarPage() {
       setEvents(prev => [...prev, created]);
       setLocalMeta(prev => ({ ...prev, [created.id]: meta }));
       toast.success('Evento creado correctamente', { id: toastId });
-    } catch {
-      toast.error('Error al crear el evento en Google Calendar', { id: toastId });
+    } catch (err) {
+      toast.error(getApiError(err, 'Error al crear el evento en Google Calendar'), { id: toastId });
     } finally {
       setCreateSlot(null);
     }
@@ -123,8 +124,8 @@ export default function CalendarPage() {
       setLocalMeta(prev => { const n = { ...prev }; delete n[id]; return n; });
       setDetailEvent(null);
       toast.success('Evento eliminado', { id: toastId });
-    } catch {
-      toast.error('Error al eliminar el evento', { id: toastId });
+    } catch (err) {
+      toast.error(getApiError(err, 'Error al eliminar el evento'), { id: toastId });
     }
   };
 
@@ -141,8 +142,8 @@ export default function CalendarPage() {
         return { ...n, [created.id]: meta };
       });
       toast.success('Evento actualizado correctamente', { id: toastId });
-    } catch {
-      toast.error('Error al guardar los cambios', { id: toastId });
+    } catch (err) {
+      toast.error(getApiError(err, 'Error al guardar los cambios'), { id: toastId });
     } finally {
       setEditEvent(null);
     }
@@ -197,7 +198,7 @@ export default function CalendarPage() {
       </div>
 
       {error && <p style={styles.error}>{error}</p>}
-      {loading && <p style={styles.info}>Cargando eventos...</p>}
+      {loading && <Spinner label="Cargando eventos..." />}
 
       {/* ── Pestaña: Próximos eventos ────────────────────── */}
       {!loading && activeTab === 'list' && (

@@ -90,18 +90,22 @@ def delete_event(event_id: str) -> bool:
     """
     Elimina un evento de Google Calendar por su ID.
 
-    Devuelve True si se eliminó correctamente, False si no existe.
-    Lanza excepción si hay un error de API inesperado.
+    Devuelve True si se eliminó correctamente, False si no existe (404/410).
+    Lanza excepción con mensaje descriptivo si hay un error de API inesperado.
     """
     service = get_calendar_service()
     try:
         service.events().delete(calendarId="primary", eventId=event_id).execute()
+        print(f"Evento eliminado: {event_id}")
         return True
     except Exception as e:
+        error_str = str(e)
+        print(f"ERROR delete_event(id={event_id}): {type(e).__name__}: {error_str}")
         # Google Calendar devuelve 410 Gone si el evento ya fue eliminado
-        if "410" in str(e) or "404" in str(e):
+        if "410" in error_str or "404" in error_str:
             return False
-        raise
+        # Propagar con mensaje descriptivo para que el router lo muestre al frontend
+        raise RuntimeError(f"{type(e).__name__}: {error_str}") from e
 
 
 def get_upcoming_events(max_results: int = 10) -> list[dict]:
