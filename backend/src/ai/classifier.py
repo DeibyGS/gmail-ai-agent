@@ -1,8 +1,12 @@
 import json
 from datetime import datetime
+from zoneinfo import ZoneInfo
 from google import genai
 from icalendar import Calendar
 from config.settings import GEMINI_API_KEY
+
+# Timezone de referencia para normalizar horas extraídas de .ics
+_MADRID_TZ = ZoneInfo("Europe/Madrid")
 
 # Crea el cliente de Gemini con la API key
 client = genai.Client(api_key=GEMINI_API_KEY)
@@ -218,6 +222,12 @@ def extract_event_from_ics(attachments: list[dict]) -> dict | None:
                 if dtstart:
                     dt = dtstart.dt
                     if hasattr(dt, "hour"):  # datetime con hora
+                        # Normalizar a Europe/Madrid para que la hora coincida con
+                        # el timeZone que usa _build_event_body al crear el evento.
+                        # Los .ics de Outlook/Exchange usan "Romance Standard Time"
+                        # (nombre Windows) que icalendar puede resolver incorrectamente.
+                        if dt.tzinfo is not None:
+                            dt = dt.astimezone(_MADRID_TZ)
                         date_str = dt.strftime("%Y-%m-%d")
                         time_str = dt.strftime("%H:%M")
                     else:                     # date sin hora (evento de día completo)
