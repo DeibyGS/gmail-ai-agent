@@ -8,7 +8,10 @@ from config.settings import GEMINI_API_KEY
 client = genai.Client(api_key=GEMINI_API_KEY)
 
 # Categorías válidas que puede devolver Gemini
-VALID_CATEGORIES = {"promocion", "reunion", "recordatorio", "personal", "otro"}
+VALID_CATEGORIES = {
+    "promocion", "reunion", "recordatorio", "personal", "otro",
+    "factura", "soporte", "notificacion", "urgente",
+}
 
 
 def classify_email(email: dict) -> dict:
@@ -57,52 +60,113 @@ def _build_prompt(email: dict) -> str:
     """
     today = datetime.now().strftime("%Y-%m-%d")
     return f"""
-Analiza el siguiente correo electrónico y responde ÚNICAMENTE con un JSON válido, sin texto adicional.
+Eres un asistente experto en análisis de correos electrónicos. Analiza el siguiente correo y responde ÚNICAMENTE con un JSON válido, sin texto adicional ni bloques de código markdown.
 
 Fecha actual: {today}
 
-CORREO:
+CORREO A ANALIZAR:
 De: {email['sender']}
 Asunto: {email['subject']}
-Cuerpo: {email['body'][:2000]}
+Cuerpo:
+{email['body'][:2000]}
 
-INSTRUCCIONES:
-1. Clasifica el correo en UNA de estas categorías:
-   - "promocion": ofertas, marketing, newsletters, publicidad
-   - "reunion": invitaciones a reuniones, videollamadas, entrevistas, citas
-   - "recordatorio": vencimientos, plazos, confirmaciones
-   - "personal": correos de personas conocidas, familia, amigos
-   - "otro": cualquier cosa que no encaje en las anteriores
+═══════════════════════════════════════
+INSTRUCCIÓN 1 — CLASIFICACIÓN
+═══════════════════════════════════════
+Clasifica el correo en EXACTAMENTE UNA de estas 9 categorías:
 
-2. Resume el correo en máximo 2 líneas en español.
+  "promocion"    → Ofertas comerciales, descuentos, marketing, newsletters, publicidad, cupones.
+  "reunion"      → Invitaciones a reuniones presenciales o virtuales (Zoom, Meet, Teams), entrevistas,
+                   citas, eventos con fecha y hora concretas, o correos que mencionan un archivo .ics adjunto.
+  "recordatorio" → Avisos de vencimiento, plazos de pago, confirmaciones pendientes, renovaciones,
+                   recordatorios de tareas o trámites.
+  "factura"      → Facturas, recibos, extractos bancarios, cobros, pagos, comprobantes de transacción.
+  "soporte"      → Tickets de soporte técnico, incidencias, atención al cliente, resolución de problemas.
+  "notificacion" → Alertas automáticas de sistemas, apps o plataformas (GitHub, Slack, Jira, Google,
+                   redes sociales). Mensajes generados automáticamente sin interacción humana directa.
+  "urgente"      → Correos que requieren acción inmediata: emergencias, plazos críticos inminentes,
+                   solicitudes marcadas como urgentes o con consecuencias graves si no se actúa.
+  "personal"     → Correos de personas conocidas (familia, amigos, colegas) con tono personal y directo.
+  "otro"         → Cualquier correo que no encaje claramente en las categorías anteriores.
 
-3. Si la categoría es "reunion", extrae los datos del evento. Si no, pon null.
-   - Para la fecha, usa el año de "Fecha actual" si el correo no especifica año o si la fecha resultante sería en el pasado.
-   - Si la fecha es claramente en el pasado y no tiene sentido crearla hoy, pon null en date.
+Reglas de clasificación:
+  - Si el correo menciona un archivo .ics adjunto o una invitación de calendario, clasifica como "reunion".
+  - "urgente" tiene prioridad sobre "recordatorio" si el plazo es crítico o inmediato (mismo día o siguiente).
+  - "factura" tiene prioridad sobre "notificacion" si contiene importes o comprobantes de pago.
 
-4. Si el evento es recurrente (se repite), indica el patrón con este formato exacto:
-   - Solo semanal con días específicos: "WEEKLY:MO", "WEEKLY:MO,WE", "WEEKLY:TU,TH,FR"
-   - Diario: "DAILY"
-   - Mensual con día del mes: "MONTHLY:15" (donde 15 es el día del mes)
-   - Si NO se repite o no hay suficiente información: null
+═══════════════════════════════════════
+INSTRUCCIÓN 2 — RESUMEN
+═══════════════════════════════════════
+Escribe un resumen en español de 2 a 3 líneas que incluya:
+  - Qué comunica el correo (lo esencial)
+  - La acción requerida al destinatario (si existe): responder, asistir, pagar, revisar, etc.
+  - El plazo o fecha relevante (si se menciona)
 
-   Códigos de días: MO=lunes, TU=martes, WE=miércoles, TH=jueves, FR=viernes, SA=sábado, SU=domingo
+═══════════════════════════════════════
+INSTRUCCIÓN 3 — DATOS DEL EVENTO (solo si es "reunion")
+═══════════════════════════════════════
+Si la categoría es "reunion", extrae los datos del evento. En cualquier otro caso, pon null.
 
-FORMATO DE RESPUESTA (solo el JSON, sin markdown):
+Reglas para la extracción:
+  a) FECHA: Usa formato YYYY-MM-DD.
+     - Si el correo no indica el año, asume el año de "Fecha actual" ({today[:4]}).
+     - Si la fecha resultante ya pasó (es anterior a {today}), avanza al mismo día del año siguiente.
+     - Si no hay fecha concreta pero hay recurrencia (ej: "todos los lunes"), pon null en date.
+     - Si no hay ninguna información de fecha, pon null.
+
+  b) HORA: Usa formato HH:MM (24 horas).
+     - Convierte horas en formato 12h (AM/PM) a 24h correctamente: 3:00 PM → 15:00.
+     - Si la hora viene con zona horaria (ej: "10:00 CET", "9am EST"), conviértela a hora local de España
+       (Europe/Madrid, UTC+1 en invierno / UTC+2 en verano). Hoy es {today}.
+     - Si no hay hora, pon null.
+
+  c) LOCATION: URL completa de videollamada, nombre de sala física, dirección, o null.
+
+  d) DESCRIPTION: Información adicional relevante del evento (agenda, participantes, notas). Puede ser null.
+
+  e) NOTA IMPORTANTE: Si el correo menciona que tiene un archivo .ics adjunto, indica en description
+     "Adjunto .ics disponible" para que el sistema lo procese con más detalle.
+
+═══════════════════════════════════════
+INSTRUCCIÓN 4 — RECURRENCIA DEL EVENTO
+═══════════════════════════════════════
+Si el evento se repite con un patrón regular, indica la recurrencia con este formato exacto:
+
+  "DAILY"          → Se repite todos los días
+                     Ej: "daily standup", "reunión diaria", "cada día"
+
+  "WEEKLY:XX"      → Se repite semanalmente en días específicos (XX = códigos de días separados por coma)
+                     Ej: "todos los lunes" → "WEEKLY:MO"
+                         "lunes y miércoles" → "WEEKLY:MO,WE"
+                         "martes, jueves y viernes" → "WEEKLY:TU,TH,FR"
+
+  "MONTHLY:DD"     → Se repite mensualmente el día DD del mes
+                     Ej: "el día 15 de cada mes" → "MONTHLY:15"
+                         "primer lunes del mes" → no usar este formato, pon null
+
+  null             → No se repite, no hay suficiente información, o el patrón no encaja en los anteriores
+
+Códigos de días: MO=lunes, TU=martes, WE=miércoles, TH=jueves, FR=viernes, SA=sábado, SU=domingo
+
+═══════════════════════════════════════
+FORMATO DE RESPUESTA
+═══════════════════════════════════════
+Responde SOLO con este JSON exacto (sin markdown, sin comentarios, sin texto fuera del JSON):
+
 {{
-  "category": "una de las 5 categorías",
-  "summary": "resumen breve en español",
+  "category": "una de las 9 categorías listadas",
+  "summary": "resumen de 2-3 líneas con acción requerida y plazo si aplica",
   "event_data": {{
-    "title": "título del evento",
-    "date": "fecha en formato YYYY-MM-DD o null si no se menciona",
-    "time": "hora en formato HH:MM o null si no se menciona",
-    "location": "lugar o enlace de videollamada o null si no se menciona",
-    "description": "descripción adicional del evento",
-    "recurrence": "patrón de recurrencia según instrucción 4, o null si no se repite"
+    "title": "título descriptivo del evento",
+    "date": "YYYY-MM-DD o null",
+    "time": "HH:MM en hora local de España o null",
+    "location": "lugar, enlace o null",
+    "description": "contexto adicional del evento o null",
+    "recurrence": "patrón según instrucción 4, o null"
   }}
 }}
 
-Si NO es una reunión, el campo event_data debe ser null.
+Si la categoría NO es "reunion", el campo event_data debe ser exactamente null (no un objeto vacío).
 """
 
 

@@ -9,6 +9,7 @@ from src.ai.classifier import (
     extract_event_from_ics,
     _rrule_to_pattern,
     classify_email,
+    VALID_CATEGORIES,
 )
 
 
@@ -234,3 +235,107 @@ def test_classify_email_uses_gemini_when_no_ics(mock_genai_client):
 
     result = classify_email(email)
     assert result["event_data"]["title"] == "Gemini title"
+
+
+# ── Tests de VALID_CATEGORIES (9 categorías) ─────────────────────────────────
+
+def test_valid_categories_count():
+    """Debe haber exactamente 9 categorías válidas."""
+    assert len(VALID_CATEGORIES) == 9
+
+
+def test_valid_categories_contains_all_expected():
+    """Todas las categorías originales y nuevas deben estar presentes."""
+    expected = {
+        # Originales
+        "promocion", "reunion", "recordatorio", "personal", "otro",
+        # Nuevas
+        "factura", "soporte", "notificacion", "urgente",
+    }
+    assert VALID_CATEGORIES == expected
+
+
+@patch("src.ai.classifier.client")
+def test_classify_email_new_category_factura(mock_genai_client):
+    """Gemini puede devolver 'factura' como categoría válida."""
+    mock_genai_client.models.generate_content.return_value = MagicMock(
+        text='{"category": "factura", "summary": "Factura de servicio por 49.99€.", "event_data": null}'
+    )
+    email = {
+        "id": "test-factura",
+        "sender": "billing@empresa.com",
+        "subject": "Tu factura de marzo",
+        "body": "Adjuntamos tu factura por 49.99€.",
+        "attachments": [],
+    }
+    result = classify_email(email)
+    assert result["category"] == "factura"
+    assert result["event_data"] is None
+
+
+@patch("src.ai.classifier.client")
+def test_classify_email_new_category_soporte(mock_genai_client):
+    """Gemini puede devolver 'soporte' como categoría válida."""
+    mock_genai_client.models.generate_content.return_value = MagicMock(
+        text='{"category": "soporte", "summary": "Ticket #4521 abierto por error 500.", "event_data": null}'
+    )
+    email = {
+        "id": "test-soporte",
+        "sender": "noreply@helpdesk.io",
+        "subject": "Ticket #4521 creado",
+        "body": "Tu ticket de soporte ha sido creado.",
+        "attachments": [],
+    }
+    result = classify_email(email)
+    assert result["category"] == "soporte"
+
+
+@patch("src.ai.classifier.client")
+def test_classify_email_new_category_notificacion(mock_genai_client):
+    """Gemini puede devolver 'notificacion' como categoría válida."""
+    mock_genai_client.models.generate_content.return_value = MagicMock(
+        text='{"category": "notificacion", "summary": "GitHub notifica un nuevo PR en el repositorio.", "event_data": null}'
+    )
+    email = {
+        "id": "test-notif",
+        "sender": "noreply@github.com",
+        "subject": "[GitHub] New pull request opened",
+        "body": "A new pull request was opened by user123.",
+        "attachments": [],
+    }
+    result = classify_email(email)
+    assert result["category"] == "notificacion"
+
+
+@patch("src.ai.classifier.client")
+def test_classify_email_new_category_urgente(mock_genai_client):
+    """Gemini puede devolver 'urgente' como categoría válida."""
+    mock_genai_client.models.generate_content.return_value = MagicMock(
+        text='{"category": "urgente", "summary": "Requiere acción inmediata: cuenta bloqueada.", "event_data": null}'
+    )
+    email = {
+        "id": "test-urgente",
+        "sender": "security@banco.com",
+        "subject": "URGENTE: Tu cuenta ha sido bloqueada",
+        "body": "Debes verificar tu identidad en las próximas 2 horas.",
+        "attachments": [],
+    }
+    result = classify_email(email)
+    assert result["category"] == "urgente"
+
+
+@patch("src.ai.classifier.client")
+def test_classify_email_invalid_category_falls_back_to_otro(mock_genai_client):
+    """Si Gemini devuelve una categoría no válida, se usa 'otro' como fallback."""
+    mock_genai_client.models.generate_content.return_value = MagicMock(
+        text='{"category": "desconocida", "summary": "Correo sin clasificar.", "event_data": null}'
+    )
+    email = {
+        "id": "test-fallback",
+        "sender": "test@test.com",
+        "subject": "Asunto cualquiera",
+        "body": "Cuerpo del correo.",
+        "attachments": [],
+    }
+    result = classify_email(email)
+    assert result["category"] == "otro"
