@@ -79,6 +79,7 @@ class TestGetUnreadEmails:
         assert result[0]["id"] == "abc123"
         assert result[0]["subject"] == "Asunto de prueba"
         assert result[0]["sender"] == "remitente@ejemplo.com"
+        assert result[0]["attachments"] == []  # sin adjuntos .ics en este mensaje
 
 
 # ── Tests de mark_as_read ─────────────────────────────────────────────────────

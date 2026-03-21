@@ -76,8 +76,24 @@ def create_event_from_email(event_data: dict) -> dict | None:
     if not event_data:
         return None
 
-    if not event_data.get("title") or not event_data.get("date"):
+    if not event_data.get("title"):
         return None
+
+    # Si no hay fecha pero sí recurrencia, usar hoy como inicio de la serie
+    if not event_data.get("date"):
+        if event_data.get("recurrence"):
+            event_data = {**event_data, "date": datetime.now().strftime("%Y-%m-%d")}
+        else:
+            return None
+
+    # Descartar eventos con fecha en el pasado (Gemini puede extraer fechas de emails viejos)
+    try:
+        event_date = datetime.strptime(event_data["date"], "%Y-%m-%d").date()
+        if event_date < datetime.now().date():
+            print(f"Evento descartado: fecha en el pasado ({event_data['date']}) — '{event_data.get('title')}'")
+            return None
+    except ValueError:
+        pass  # Si la fecha tiene formato inválido, dejamos que _build_event_body lo maneje
 
     event_body = _build_event_body(event_data)
     service = get_calendar_service()

@@ -24,11 +24,19 @@ export const theme = {
 
     // Categorías de email — colores semitransparentes para dark theme
     categoryColors: {
-      urgente:     { bg: 'rgba(248,113,113,0.15)',  text: '#F87171',  border: 'rgba(248,113,113,0.3)' },
-      reunion:     { bg: 'rgba(99,102,241,0.15)',   text: '#818CF8',  border: 'rgba(99,102,241,0.3)' },
-      informativo: { bg: 'rgba(52,211,153,0.15)',   text: '#34D399',  border: 'rgba(52,211,153,0.3)' },
-      promocion:   { bg: 'rgba(251,191,36,0.15)',   text: '#FBBF24',  border: 'rgba(251,191,36,0.3)' },
-      otro:        { bg: 'rgba(156,163,175,0.15)',  text: '#9CA3AF',  border: 'rgba(156,163,175,0.3)' },
+      // Categorías originales
+      urgente:      { bg: 'rgba(248,113,113,0.15)',  text: '#F87171',  border: 'rgba(248,113,113,0.3)' },  // rojo   — acción inmediata
+      reunion:      { bg: 'rgba(99,102,241,0.15)',   text: '#818CF8',  border: 'rgba(99,102,241,0.3)' },   // índigo — agenda
+      recordatorio: { bg: 'rgba(251,146,60,0.15)',   text: '#FB923C',  border: 'rgba(251,146,60,0.3)' },   // naranja — plazo
+      personal:     { bg: 'rgba(167,139,250,0.15)',  text: '#A78BFA',  border: 'rgba(167,139,250,0.3)' },  // violeta — personas
+      promocion:    { bg: 'rgba(251,191,36,0.15)',   text: '#FBBF24',  border: 'rgba(251,191,36,0.3)' },   // ámbar  — marketing
+      otro:         { bg: 'rgba(156,163,175,0.15)',  text: '#9CA3AF',  border: 'rgba(156,163,175,0.3)' },  // gris   — sin clasificar
+      // Nuevas categorías
+      factura:      { bg: 'rgba(251,191,36,0.15)',   text: '#FBBF24',  border: 'rgba(251,191,36,0.3)' },   // ámbar  — dinero
+      soporte:      { bg: 'rgba(52,211,153,0.15)',   text: '#34D399',  border: 'rgba(52,211,153,0.3)' },   // verde  — ayuda
+      notificacion: { bg: 'rgba(156,163,175,0.15)',  text: '#9CA3AF',  border: 'rgba(156,163,175,0.3)' },  // gris   — sistema
+      // Alias para compatibilidad con datos legacy
+      informativo:  { bg: 'rgba(52,211,153,0.15)',   text: '#34D399',  border: 'rgba(52,211,153,0.3)' },   // verde  — legacy
     } as Record<string, { bg: string; text: string; border: string }>,
   },
 
