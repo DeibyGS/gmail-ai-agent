@@ -138,18 +138,12 @@ def delete_event(event_id: str) -> bool:
     Devuelve False si no existe (404) o ya fue eliminado (410).
     Lanza RuntimeError con mensaje descriptivo para cualquier otro error de API.
     """
-    print(f"[delete_event] event_id='{event_id}'")
     service = get_calendar_service()
 
     # ── Paso 1: verificar que el evento existe antes de intentar borrar ──────
     try:
-        ev = service.events().get(calendarId="primary", eventId=event_id).execute()
-        print(f"[delete_event] GET OK → '{ev.get('summary')}' status={ev.get('status')} "
-              f"organizer_self={ev.get('organizer', {}).get('self')} "
-              f"organizer={ev.get('organizer', {}).get('email')}")
+        service.events().get(calendarId="primary", eventId=event_id).execute()
     except HttpError as get_err:
-        raw = get_err.content.decode("utf-8") if get_err.content else str(get_err)
-        print(f"[delete_event] GET FAILED status={get_err.resp.status}: {raw}")
         if get_err.resp.status in (404, 410):
             return False  # El evento no existe en el calendario primario
         raise RuntimeError(
@@ -164,16 +158,12 @@ def delete_event(event_id: str) -> bool:
             eventId=event_id,
             sendUpdates="none",   # evita errores de permiso de notificaciones
         ).execute()
-        print(f"[delete_event] DELETE OK → event_id='{event_id}'")
         return True
     except HttpError as e:
-        raw = e.content.decode("utf-8") if e.content else str(e)
-        print(f"[delete_event] DELETE FAILED status={e.resp.status}: {raw}")
         if e.resp.status in (404, 410):
             return False
         raise RuntimeError(f"Error de Google Calendar (HTTP {e.resp.status}): {e.reason}") from e
     except Exception as e:
-        print(f"[delete_event] UNEXPECTED ERROR: {type(e).__name__}: {e}")
         raise RuntimeError(f"{type(e).__name__}: {e}") from e
 
 
