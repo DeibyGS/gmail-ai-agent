@@ -46,10 +46,14 @@ def classify_email(email: dict) -> dict:
             "event_data": None
         }
 
-    # Si hay adjunto .ics, sus datos son más fiables que los de Gemini
+    # Si hay adjunto .ics, sus datos son más fiables que los de Gemini.
+    # Además forzamos category="reunion": la presencia de un .ics válido
+    # confirma que es una invitación de calendario, independientemente de
+    # lo que haya clasificado Gemini (ej: podría confundirlo con "notificacion").
     ics_event_data = extract_event_from_ics(email.get("attachments", []))
     if ics_event_data:
         result["event_data"] = ics_event_data
+        result["category"] = "reunion"
 
     # Combinamos el correo original con el resultado de Gemini
     return {**email, **result}
@@ -63,11 +67,22 @@ def _build_prompt(email: dict) -> str:
     Pedimos JSON directamente para no tener que parsear texto libre.
     """
     today = datetime.now().strftime("%Y-%m-%d")
+
+    # Informar a Gemini si hay adjuntos .ics para que clasifique correctamente
+    attachments = email.get("attachments", [])
+    ics_filenames = [a["filename"] for a in attachments if a.get("filename", "").lower().endswith(".ics")]
+    ics_note = (
+        f"\nADJUNTOS DETECTADOS: {', '.join(ics_filenames)} — "
+        "Este correo contiene un archivo de invitación de calendario (.ics). "
+        "Clasifica como \"reunion\" salvo que el cuerpo indique claramente lo contrario.\n"
+        if ics_filenames else ""
+    )
+
     return f"""
 Eres un asistente experto en análisis de correos electrónicos. Analiza el siguiente correo y responde ÚNICAMENTE con un JSON válido, sin texto adicional ni bloques de código markdown.
 
 Fecha actual: {today}
-
+{ics_note}
 CORREO A ANALIZAR:
 De: {email['sender']}
 Asunto: {email['subject']}

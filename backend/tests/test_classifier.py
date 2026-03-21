@@ -196,6 +196,27 @@ def test_rrule_to_pattern_unknown_freq():
 # ── Test de classify_email con .ics (integración con mock) ───────────────────
 
 @patch("src.ai.classifier.client")
+def test_classify_email_ics_forces_reunion_category(mock_genai_client):
+    """Si hay .ics válido, la categoría se fuerza a 'reunion' aunque Gemini diga otra cosa."""
+    # Gemini clasifica como "promocion" (como puede pasar con asuntos tipo "Daily X")
+    mock_genai_client.models.generate_content.return_value = MagicMock(
+        text='{"category": "promocion", "summary": "Newsletter diaria.", "event_data": null}'
+    )
+    ics_data = _make_ics(summary="Daily Meeting", dtstart="20260325T090000")
+    email = {
+        "id": "test-force",
+        "sender": "organizer@empresa.com",
+        "subject": "Daily PyCantes M-X-V",
+        "body": "Invitación de calendario adjunta.",
+        "attachments": [{"filename": "invite.ics", "data": ics_data}],
+    }
+    result = classify_email(email)
+    # El .ics confirma que es reunión — la categoría debe ser "reunion", no "promocion"
+    assert result["category"] == "reunion"
+    assert result["event_data"]["title"] == "Daily Meeting"
+
+
+@patch("src.ai.classifier.client")
 def test_classify_email_ics_overrides_gemini_event_data(mock_genai_client):
     """Si hay .ics, event_data del .ics sobreescribe el de Gemini."""
     mock_genai_client.models.generate_content.return_value = MagicMock(
