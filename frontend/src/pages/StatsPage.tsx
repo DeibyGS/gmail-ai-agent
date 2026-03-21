@@ -6,13 +6,25 @@ import {
 } from 'recharts';
 import type { CategoryStats, DailyVolume, SenderStat } from '../types';
 import { fetchCategoryStats, fetchDailyStats, fetchTopSenders } from '../services/api';
+import Spinner from '../components/Spinner';
+import { theme } from '../theme';
 
-// Paleta de colores para categorías dinámicas
-const COLORS = ['#4f46e5', '#dc2626', '#16a34a', '#ea580c', '#9333ea', '#0891b2', '#ca8a04'];
+// Colores para gráficas — adaptados al dark theme
+const CHART_COLORS = theme.chartColors;
 
 function getColor(index: number) {
-  return COLORS[index % COLORS.length];
+  return CHART_COLORS[index % CHART_COLORS.length];
 }
+
+// Estilos de tooltip personalizados para Recharts en dark theme
+const tooltipStyle = {
+  backgroundColor: theme.colors.surfaceHigh,
+  border: `1px solid ${theme.colors.border}`,
+  borderRadius: theme.radius.sm,
+  color: theme.colors.textPrimary,
+  fontFamily: theme.fonts.body,
+  fontSize: '0.85rem',
+};
 
 export default function StatsPage() {
   const [categoryStats, setCategoryStats] = useState<CategoryStats | null>(null);
@@ -41,7 +53,7 @@ export default function StatsPage() {
     load();
   }, []);
 
-  if (loading) return <div style={styles.page}><p style={styles.info}>Cargando estadísticas...</p></div>;
+  if (loading) return <div style={styles.page}><Spinner label="Cargando estadísticas..." /></div>;
   if (error)   return <div style={styles.page}><p style={styles.error}>{error}</p></div>;
 
   // Datos para el donut
@@ -49,7 +61,6 @@ export default function StatsPage() {
     ? Object.entries(categoryStats.by_category).map(([name, value]) => ({ name, value }))
     : [];
 
-  // Mostrar aviso si no hay datos históricos aún
   const noData = categoryStats?.total === 0;
 
   return (
@@ -62,13 +73,16 @@ export default function StatsPage() {
         </p>
       )}
 
-      {/* ── KPI Cards ──────────────────────────────────────────────── */}
       {categoryStats && !noData && (
         <>
-          <p style={styles.subtitle}>Total histórico: <strong>{categoryStats.total}</strong> correos procesados</p>
+          <p style={styles.subtitle}>
+            Total histórico: <strong style={{ color: theme.colors.textPrimary }}>{categoryStats.total}</strong> correos procesados
+          </p>
+
+          {/* ── KPI Cards ──────────────────────────────────────────────── */}
           <div style={styles.kpiRow}>
             {Object.entries(categoryStats.by_category).map(([cat, count], i) => (
-              <div key={cat} style={{ ...styles.kpiCard, borderTop: `4px solid ${getColor(i)}` }}>
+              <div key={cat} style={{ ...styles.kpiCard, borderTop: `3px solid ${getColor(i)}` }}>
                 <span style={{ ...styles.kpiCount, color: getColor(i) }}>{count}</span>
                 <span style={styles.kpiLabel}>{cat}</span>
               </div>
@@ -91,15 +105,22 @@ export default function StatsPage() {
                     outerRadius={110}
                     paddingAngle={3}
                     dataKey="value"
-                    label={({ name, percent }: { name?: string; percent?: number }) => `${name ?? ''} ${((percent ?? 0) * 100).toFixed(0)}%`}
+                    label={({ name, percent }: { name?: string; percent?: number }) =>
+                      `${name ?? ''} ${((percent ?? 0) * 100).toFixed(0)}%`
+                    }
                     labelLine={false}
                   >
                     {pieData.map((_, i) => (
                       <Cell key={i} fill={getColor(i)} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(value: unknown) => [`${value} correos`, '']} />
-                  <Legend />
+                  <Tooltip
+                    contentStyle={tooltipStyle}
+                    formatter={(value: unknown) => [`${value} correos`, '']}
+                  />
+                  <Legend
+                    wrapperStyle={{ fontFamily: theme.fonts.body, fontSize: '0.82rem', color: theme.colors.textSecondary }}
+                  />
                 </PieChart>
               </ResponsiveContainer>
             </div>
@@ -112,21 +133,24 @@ export default function StatsPage() {
               ) : (
                 <ResponsiveContainer width="100%" height={280}>
                   <ComposedChart data={dailyData} margin={{ top: 5, right: 10, left: 0, bottom: 40 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
                     <XAxis
                       dataKey="day"
-                      tick={{ fontSize: 11 }}
+                      tick={{ fontSize: 11, fill: theme.colors.textMuted, fontFamily: theme.fonts.mono }}
                       angle={-45}
                       textAnchor="end"
                     />
-                    <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
-                    <Tooltip />
-                    <Bar dataKey="total" name="Correos" fill="#4f46e5" radius={[4, 4, 0, 0]} />
+                    <YAxis
+                      tick={{ fontSize: 11, fill: theme.colors.textMuted, fontFamily: theme.fonts.mono }}
+                      allowDecimals={false}
+                    />
+                    <Tooltip contentStyle={tooltipStyle} />
+                    <Bar dataKey="total" name="Correos" fill={CHART_COLORS[0]} radius={[4, 4, 0, 0]} />
                     <Line
                       type="monotone"
                       dataKey="total"
                       name="Tendencia"
-                      stroke="#ea580c"
+                      stroke={CHART_COLORS[2]}
                       strokeWidth={2}
                       dot={false}
                     />
@@ -147,16 +171,23 @@ export default function StatsPage() {
                   layout="vertical"
                   margin={{ top: 5, right: 30, left: 10, bottom: 5 }}
                 >
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" horizontal={false} />
-                  <XAxis type="number" tick={{ fontSize: 11 }} allowDecimals={false} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" horizontal={false} />
+                  <XAxis
+                    type="number"
+                    tick={{ fontSize: 11, fill: theme.colors.textMuted, fontFamily: theme.fonts.mono }}
+                    allowDecimals={false}
+                  />
                   <YAxis
                     type="category"
                     dataKey="sender"
-                    tick={{ fontSize: 11 }}
+                    tick={{ fontSize: 11, fill: theme.colors.textMuted, fontFamily: theme.fonts.body }}
                     width={180}
                   />
-                  <Tooltip formatter={(value: unknown) => [`${value} correos`, 'Total']} />
-                  <Bar dataKey="count" name="Correos" fill="#4f46e5" radius={[0, 4, 4, 0]} />
+                  <Tooltip
+                    contentStyle={tooltipStyle}
+                    formatter={(value: unknown) => [`${value} correos`, 'Total']}
+                  />
+                  <Bar dataKey="count" name="Correos" fill={CHART_COLORS[0]} radius={[0, 4, 4, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -168,14 +199,15 @@ export default function StatsPage() {
 }
 
 const styles: Record<string, React.CSSProperties> = {
-  page:          { padding: '1.5rem', maxWidth: '1000px', margin: '0 auto' },
-  title:         { margin: '0 0 0.25rem', fontSize: '1.25rem', fontWeight: 700 },
-  subtitle:      { color: '#6b7280', fontSize: '0.9rem', margin: '0 0 1.25rem' },
-  kpiRow:        { display: 'flex', flexWrap: 'wrap', gap: '1rem', marginBottom: '2rem' },
-  kpiCard:       {
-    background: '#fff',
-    border: '1px solid #e5e7eb',
-    borderRadius: '8px',
+  page:         { padding: '1.5rem', maxWidth: '1000px', margin: '0 auto' },
+  title:        { margin: '0 0 0.25rem', fontFamily: theme.fonts.heading, fontSize: '1.25rem', fontWeight: 700, color: theme.colors.textPrimary },
+  subtitle:     { color: theme.colors.textMuted, fontFamily: theme.fonts.body, fontSize: '0.9rem', margin: '0 0 1.25rem' },
+  kpiRow:       { display: 'flex', flexWrap: 'wrap', gap: '1rem', marginBottom: '2rem' },
+  kpiCard: {
+    background: theme.colors.surface,
+    border: `1px solid ${theme.colors.border}`,
+    borderRadius: theme.radius.md,
+    boxShadow: theme.shadows.card,
     padding: '1rem 1.5rem',
     display: 'flex',
     flexDirection: 'column',
@@ -183,17 +215,18 @@ const styles: Record<string, React.CSSProperties> = {
     minWidth: '110px',
     gap: '0.25rem',
   },
-  kpiCount:      { fontSize: '2rem', fontWeight: 700, lineHeight: 1 },
-  kpiLabel:      { fontSize: '0.8rem', color: '#6b7280', fontWeight: 500 },
-  chartsRow:     { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' },
-  chartBox:      {
-    background: '#fff',
-    border: '1px solid #e5e7eb',
-    borderRadius: '8px',
+  kpiCount:     { fontFamily: theme.fonts.heading, fontSize: '2rem', fontWeight: 700, lineHeight: 1 },
+  kpiLabel:     { fontFamily: theme.fonts.body, fontSize: '0.8rem', color: theme.colors.textMuted, fontWeight: 500 },
+  chartsRow:    { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' },
+  chartBox: {
+    background: theme.colors.surface,
+    border: `1px solid ${theme.colors.border}`,
+    borderRadius: theme.radius.md,
+    boxShadow: theme.shadows.card,
     padding: '1.25rem',
   },
-  chartTitle:    { margin: '0 0 0.25rem', fontSize: '0.95rem', fontWeight: 600 },
-  chartSubtitle: { margin: '0 0 1rem', fontSize: '0.8rem', color: '#9ca3af' },
-  info:          { color: '#6b7280', fontSize: '0.9rem' },
-  error:         { color: '#dc2626', fontSize: '0.9rem' },
+  chartTitle:    { margin: '0 0 0.25rem', fontFamily: theme.fonts.heading, fontSize: '0.95rem', fontWeight: 600, color: theme.colors.textPrimary },
+  chartSubtitle: { margin: '0 0 1rem', fontFamily: theme.fonts.body, fontSize: '0.8rem', color: theme.colors.textMuted },
+  info:          { color: theme.colors.textMuted, fontFamily: theme.fonts.body, fontSize: '0.9rem' },
+  error:         { color: theme.colors.danger,    fontFamily: theme.fonts.body, fontSize: '0.9rem' },
 };

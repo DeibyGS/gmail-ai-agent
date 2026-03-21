@@ -1,26 +1,31 @@
 import type { Email } from '../types';
+import { theme } from '../theme';
 
 interface Props {
   email: Email;
 }
 
-// Paleta de colores rotativa para categorías dinámicas que Gemini puede devolver
-const colorPalette = [
-  { bg: '#fef2f2', text: '#dc2626' },
-  { bg: '#eff6ff', text: '#2563eb' },
-  { bg: '#f0fdf4', text: '#16a34a' },
-  { bg: '#fff7ed', text: '#ea580c' },
-  { bg: '#fdf4ff', text: '#9333ea' },
-  { bg: '#f9fafb', text: '#6b7280' },
+// Paleta de fallback para categorías dinámicas que no estén en el theme
+const fallbackPalette = [
+  { bg: 'rgba(99,102,241,0.15)',  text: '#818CF8',  border: 'rgba(99,102,241,0.3)' },
+  { bg: 'rgba(34,211,238,0.15)',  text: '#22D3EE',  border: 'rgba(34,211,238,0.3)' },
+  { bg: 'rgba(167,139,250,0.15)', text: '#A78BFA',  border: 'rgba(167,139,250,0.3)' },
+  { bg: 'rgba(251,146,60,0.15)',  text: '#FB923C',  border: 'rgba(251,146,60,0.3)' },
+  { bg: 'rgba(52,211,153,0.15)',  text: '#34D399',  border: 'rgba(52,211,153,0.3)' },
+  { bg: 'rgba(156,163,175,0.15)', text: '#9CA3AF',  border: 'rgba(156,163,175,0.3)' },
 ];
 
-// Asigna un color consistente a cada categoría según su posición en el orden de aparición
-const categoryColorCache: Record<string, { bg: string; text: string }> = {};
+// Cache para asignar colores consistentes a categorías dinámicas
+const categoryColorCache: Record<string, { bg: string; text: string; border: string }> = {};
 let colorIndex = 0;
 
 function getColorForCategory(category: string) {
+  // Primero buscar en el design system; si no existe, usar fallback rotativo
+  if (theme.colors.categoryColors[category]) {
+    return theme.colors.categoryColors[category];
+  }
   if (!categoryColorCache[category]) {
-    categoryColorCache[category] = colorPalette[colorIndex % colorPalette.length];
+    categoryColorCache[category] = fallbackPalette[colorIndex % fallbackPalette.length];
     colorIndex++;
   }
   return categoryColorCache[category];
@@ -32,7 +37,12 @@ export default function EmailCard({ email }: Props) {
   return (
     <div style={styles.card}>
       <div style={styles.header}>
-        <span style={{ ...styles.badge, background: colors.bg, color: colors.text }}>
+        <span style={{
+          ...styles.badge,
+          background: colors.bg,
+          color: colors.text,
+          border: `1px solid ${colors.border}`,
+        }}>
           {email.category}
         </span>
       </div>
@@ -41,7 +51,7 @@ export default function EmailCard({ email }: Props) {
       <p style={styles.sender}>De: {email.sender}</p>
       <p style={styles.summary}>{email.summary}</p>
 
-      {/* Si Gemini detectó datos de reunión, los mostramos como detalle extra */}
+      {/* Si Gemini detectó datos de reunión, los mostramos como bloque destacado */}
       {email.event_data && (
         <div style={styles.eventData}>
           <strong>Reunión:</strong> {email.event_data.title}
@@ -56,10 +66,11 @@ export default function EmailCard({ email }: Props) {
 
 const styles: Record<string, React.CSSProperties> = {
   card: {
-    background: '#fff',
-    border: '1px solid #e5e7eb',
-    borderRadius: '8px',
+    background: theme.colors.surface,
+    border: `1px solid ${theme.colors.border}`,
+    borderRadius: theme.radius.md,
     padding: '1rem 1.25rem',
+    boxShadow: theme.shadows.card,
     display: 'flex',
     flexDirection: 'column',
     gap: '0.4rem',
@@ -70,35 +81,41 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: 'center',
   },
   badge: {
-    fontSize: '0.75rem',
-    fontWeight: 600,
+    fontFamily: theme.fonts.mono,
+    fontSize: '0.72rem',
+    fontWeight: 500,
     padding: '2px 10px',
-    borderRadius: '999px',
+    borderRadius: theme.radius.pill,
     textTransform: 'capitalize',
   },
   subject: {
     margin: 0,
+    fontFamily: theme.fonts.heading,
     fontSize: '0.95rem',
     fontWeight: 600,
-    color: '#111827',
+    color: theme.colors.textPrimary,
   },
   sender: {
     margin: 0,
+    fontFamily: theme.fonts.body,
     fontSize: '0.82rem',
-    color: '#6b7280',
+    color: theme.colors.textSecondary,
   },
   summary: {
     margin: 0,
+    fontFamily: theme.fonts.body,
     fontSize: '0.875rem',
-    color: '#374151',
-    lineHeight: 1.5,
+    color: theme.colors.textSecondary,
+    lineHeight: 1.6,
   },
   eventData: {
     marginTop: '0.25rem',
-    fontSize: '0.82rem',
-    background: '#eff6ff',
-    color: '#1e40af',
+    fontFamily: theme.fonts.mono,
+    fontSize: '0.8rem',
+    background: 'rgba(99,102,241,0.12)',
+    color: '#818CF8',
+    border: '1px solid rgba(99,102,241,0.3)',
     padding: '6px 10px',
-    borderRadius: '6px',
+    borderRadius: theme.radius.sm,
   },
 };

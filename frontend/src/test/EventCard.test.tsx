@@ -49,20 +49,18 @@ describe('EventCard', () => {
 
   it('llama onDelete cuando el usuario confirma eliminar', () => {
     const onDelete = vi.fn();
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
     render(<EventCard event={mockEvent} meta={mockMeta} onEdit={vi.fn()} onDelete={onDelete} />);
-    fireEvent.click(screen.getByTitle('Eliminar evento'));
+    fireEvent.click(screen.getByTitle('Eliminar evento'));      // abre ConfirmModal
+    fireEvent.click(screen.getByText('Eliminar'));              // confirma en el modal
     expect(onDelete).toHaveBeenCalledWith('evt-1');
-    vi.restoreAllMocks();
   });
 
   it('NO llama onDelete cuando el usuario cancela el confirm', () => {
     const onDelete = vi.fn();
-    vi.spyOn(window, 'confirm').mockReturnValue(false);
     render(<EventCard event={mockEvent} meta={mockMeta} onEdit={vi.fn()} onDelete={onDelete} />);
-    fireEvent.click(screen.getByTitle('Eliminar evento'));
+    fireEvent.click(screen.getByTitle('Eliminar evento'));      // abre ConfirmModal
+    fireEvent.click(screen.getByText('Cancelar'));              // cancela en el modal
     expect(onDelete).not.toHaveBeenCalled();
-    vi.restoreAllMocks();
   });
 
   it('muestra los botones de editar y eliminar', () => {

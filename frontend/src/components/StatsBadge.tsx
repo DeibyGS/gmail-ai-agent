@@ -1,4 +1,5 @@
 import type { EmailCategory } from '../types';
+import { theme } from '../theme';
 
 interface Props {
   category: EmailCategory;
@@ -12,27 +13,28 @@ const categoryLabels: Record<EmailCategory, string> = {
   otro:        'Otros',
 };
 
-const categoryColors: Record<EmailCategory, { bg: string; text: string; border: string }> = {
-  urgente:     { bg: '#fef2f2', text: '#dc2626', border: '#fecaca' },
-  reunion:     { bg: '#eff6ff', text: '#2563eb', border: '#bfdbfe' },
-  informativo: { bg: '#f0fdf4', text: '#16a34a', border: '#bbf7d0' },
-  otro:        { bg: '#f9fafb', text: '#6b7280', border: '#e5e7eb' },
-};
-
 export default function StatsBadge({ category, count }: Props) {
-  const colors = categoryColors[category];
+  const colors = theme.colors.categoryColors[category] ?? theme.colors.categoryColors['otro'];
 
   return (
-    <div style={{ ...styles.badge, background: colors.bg, border: `1px solid ${colors.border}` }}>
-      <span style={{ ...styles.count, color: colors.text }}>{count}</span>
-      <span style={{ ...styles.label, color: colors.text }}>{categoryLabels[category]}</span>
+    <div style={{
+      ...styles.badge,
+      background: colors.bg,
+      border: `1px solid ${colors.border}`,
+    }}>
+      <span style={{ ...styles.count, color: colors.text, fontFamily: theme.fonts.heading }}>
+        {count}
+      </span>
+      <span style={{ ...styles.label, color: colors.text }}>
+        {categoryLabels[category]}
+      </span>
     </div>
   );
 }
 
 const styles: Record<string, React.CSSProperties> = {
   badge: {
-    borderRadius: '10px',
+    borderRadius: theme.radius.md,
     padding: '1.25rem 1.5rem',
     display: 'flex',
     flexDirection: 'column',
@@ -46,6 +48,7 @@ const styles: Record<string, React.CSSProperties> = {
     lineHeight: 1,
   },
   label: {
+    fontFamily: theme.fonts.body,
     fontSize: '0.82rem',
     fontWeight: 500,
   },

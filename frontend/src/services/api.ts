@@ -1,6 +1,14 @@
 import axios from 'axios';
 import type { Email, EmailStats, CalendarEvent, CreateEventPayload, CategoryStats, DailyStats, SendersStats, ProcessedEmail } from '../types';
 
+/** Extrae el campo `detail` de un error de axios, o devuelve el fallback. */
+export function getApiError(err: unknown, fallback: string): string {
+  if (axios.isAxiosError(err) && err.response?.data?.detail) {
+    return String(err.response.data.detail);
+  }
+  return fallback;
+}
+
 // Base URL del backend FastAPI (CORS ya configurado para este origen)
 const api = axios.create({
   baseURL: 'http://localhost:8000/api',

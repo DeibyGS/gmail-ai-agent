@@ -23,6 +23,9 @@ crea eventos en Google Calendar para reuniones, y expone todo a través de un da
 - Recharts — gráficos de estadísticas (donut, barras, línea)
 - Axios — comunicación con el backend
 - Vitest + React Testing Library + @vitest/coverage-v8 — tests de componentes
+- **Design system centralizado** (`src/theme.ts`) — paleta AI Futuristic Glow con dark theme, glassmorphism y animaciones
+- Google Fonts: Space Grotesk (headings) · Inter (body) · IBM Plex Mono (AI outputs)
+- **Sonner** — toast notifications (crear/editar/eliminar eventos)
 
 ### Deploy
 - Docker + GitHub Actions (CI/CD)
@@ -43,6 +46,11 @@ crea eventos en Google Calendar para reuniones, y expone todo a través de un da
 - **Dashboard de estadísticas**: donut por categoría · barras+línea de volumen diario · top remitentes
 - **Calendario interactivo**: dos pestañas (lista de cards + grid mes/semana/día) · crear · editar · eliminar eventos · acciones inline en cards · etiquetas con color
 - **Script de arranque**: `emaildgs` inicia backend + frontend y abre el navegador automáticamente
+- **UI "AI Futuristic Glow"**: dark theme con fondo `#0B0F19`, glassmorphism en navbar, glow en botones IA, animación "AI thinking..." al procesar, overrides de react-big-calendar para dark mode
+- **Hover effects profesionales**: glow pulsante en botones primarios, borde iluminado en secundarios, glow rojo en danger
+- **Empty state glassmorphism**: bandeja vacía con card animada en lugar de texto plano
+- **Toast notifications**: feedback visual al crear, editar y eliminar eventos del calendario
+- **Fix bug NaN**: eventos de calendario recién creados ya muestran fecha correcta (normalización de respuesta de Google Calendar API)
 <!-- /AUTO-GENERATED -->
 
 ---

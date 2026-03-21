@@ -13,7 +13,7 @@ from typing import Optional
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-from src.calendar.client import create_event_from_email, get_upcoming_events, delete_event
+from src.calendar.client import create_event, get_upcoming_events, delete_event
 
 router = APIRouter(prefix="/api/calendar")
 
@@ -50,24 +50,18 @@ def create_calendar_event(body: CreateEventRequest) -> dict:
     Body: title (str), date (YYYY-MM-DD), time? (HH:MM), location?, description?
     Devuelve el evento creado con su ID.
     """
-    event_data = {
-        "title": body.title,
-        "date": body.date,
-        "time": body.time,
-        "location": body.location,
-        "description": body.description,
-    }
-
     try:
-        created_event = create_event_from_email(event_data)
+        created_event = create_event(
+            title=body.title,
+            date=body.date,
+            time=body.time,
+            location=body.location,
+            description=body.description,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"Error al crear evento en Google Calendar: {e}")
-
-    if not created_event:
-        raise HTTPException(
-            status_code=422,
-            detail="No se pudo crear el evento. Verifica que 'title' y 'date' sean válidos."
-        )
 
     return {
         "message": "Evento creado correctamente",
@@ -87,7 +81,8 @@ def remove_calendar_event(event_id: str) -> None:
     try:
         found = delete_event(event_id)
     except Exception as e:
-        raise HTTPException(status_code=502, detail=f"Error al eliminar evento: {e}")
+        # El mensaje ya viene descriptivo desde delete_event (tipo + detalle)
+        raise HTTPException(status_code=502, detail=f"Error al eliminar evento en Google Calendar: {e}")
 
     if not found:
-        raise HTTPException(status_code=404, detail="Evento no encontrado o ya eliminado.")
+        raise HTTPException(status_code=404, detail="Evento no encontrado o ya eliminado en Google Calendar.")

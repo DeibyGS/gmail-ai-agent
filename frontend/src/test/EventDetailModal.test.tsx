@@ -60,20 +60,18 @@ describe('EventDetailModal', () => {
 
   it('llama onDelete cuando el usuario confirma eliminar', () => {
     const onDelete = vi.fn();
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
     render(<EventDetailModal event={mockEvent} meta={mockMeta} onDelete={onDelete} onClose={vi.fn()} onMetaChange={vi.fn()} />);
-    fireEvent.click(screen.getByText('Eliminar evento'));
+    fireEvent.click(screen.getByText('Eliminar'));              // abre ConfirmModal
+    fireEvent.click(screen.getAllByText('Eliminar')[0]);        // confirma en el modal
     expect(onDelete).toHaveBeenCalledWith('evt-99');
-    vi.restoreAllMocks();
   });
 
   it('NO llama onDelete si el usuario cancela el confirm', () => {
     const onDelete = vi.fn();
-    vi.spyOn(window, 'confirm').mockReturnValue(false);
     render(<EventDetailModal event={mockEvent} meta={mockMeta} onDelete={onDelete} onClose={vi.fn()} onMetaChange={vi.fn()} />);
-    fireEvent.click(screen.getByText('Eliminar evento'));
+    fireEvent.click(screen.getByText('Eliminar'));              // abre ConfirmModal
+    fireEvent.click(screen.getByText('Cancelar'));              // cancela en el modal
     expect(onDelete).not.toHaveBeenCalled();
-    vi.restoreAllMocks();
   });
 
   it('llama onClose al hacer click en Cerrar', () => {
