@@ -117,6 +117,7 @@ export default function CalendarPage() {
   };
 
   const handleDelete = async (id: string) => {
+    console.log('[handleDelete] event_id =', id);
     const toastId = toast.loading('Eliminando evento...');
     try {
       await deleteCalendarEvent(id);
