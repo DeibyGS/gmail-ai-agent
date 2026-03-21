@@ -185,7 +185,8 @@ Próximos eventos de Google Calendar (próximos 30 días, máximo 50).
       "end": "ISO datetime",
       "location": "string",
       "description": "string",
-      "link": "https://calendar.google.com/..."
+      "link": "https://calendar.google.com/...",
+      "recurrence": ["RRULE:FREQ=WEEKLY;BYDAY=MO"]
     }
   ],
   "total": 0,

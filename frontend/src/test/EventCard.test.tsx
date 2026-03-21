@@ -68,4 +68,18 @@ describe('EventCard', () => {
     expect(screen.getByTitle('Editar evento')).toBeInTheDocument();
     expect(screen.getByTitle('Eliminar evento')).toBeInTheDocument();
   });
+
+  it('NO muestra badge de recurrente si el evento no tiene recurrencia', () => {
+    render(<EventCard event={mockEvent} meta={mockMeta} onEdit={vi.fn()} onDelete={vi.fn()} />);
+    expect(screen.queryByText('🔁 Recurrente')).not.toBeInTheDocument();
+  });
+
+  it('muestra badge "🔁 Recurrente" cuando el evento tiene recurrencia', () => {
+    const recurringEvent: CalendarEvent = {
+      ...mockEvent,
+      recurrence: ['RRULE:FREQ=WEEKLY;BYDAY=MO'],
+    };
+    render(<EventCard event={recurringEvent} meta={mockMeta} onEdit={vi.fn()} onDelete={vi.fn()} />);
+    expect(screen.getByText('🔁 Recurrente')).toBeInTheDocument();
+  });
 });

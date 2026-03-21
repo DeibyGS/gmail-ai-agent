@@ -98,22 +98,21 @@ def _build_event_body(event_data: dict) -> dict:
     Sin hora → evento de día completo (allDay). El end.date es el día siguiente
     (Google Calendar usa extremo exclusivo para fechas).
     Con hora → evento de 1 hora de duración con timezone Europe/Madrid.
+    Con recurrence → añade RRULE al cuerpo del evento.
     """
     title = event_data.get("title") or "Evento sin título"
     date_str = event_data.get("date")
     time_str = event_data.get("time")
     location = event_data.get("location")
     description = event_data.get("description", "")
+    recurrence_pattern = event_data.get("recurrence")
 
     if time_str:
-        # Evento con hora específica
         start_dt = datetime.strptime(f"{date_str} {time_str}", "%Y-%m-%d %H:%M")
         end_dt = start_dt + timedelta(hours=1)
-
         start = {"dateTime": start_dt.isoformat(), "timeZone": "Europe/Madrid"}
         end = {"dateTime": end_dt.isoformat(), "timeZone": "Europe/Madrid"}
     else:
-        # Evento de día completo — end.date debe ser el día siguiente (extremo exclusivo)
         next_day = (datetime.strptime(date_str, "%Y-%m-%d") + timedelta(days=1)).strftime("%Y-%m-%d")
         start = {"date": date_str}
         end = {"date": next_day}
@@ -125,7 +124,47 @@ def _build_event_body(event_data: dict) -> dict:
     if description:
         event_body["description"] = description
 
+    rrule = _parse_recurrence(recurrence_pattern)
+    if rrule:
+        event_body["recurrence"] = rrule
+
     return event_body
+
+
+def _parse_recurrence(pattern: str | None) -> list[str] | None:
+    """
+    Convierte el patrón de recurrencia extraído por Gemini a formato RRULE (RFC 5545).
+
+    Patrones soportados:
+      "DAILY"           → RRULE:FREQ=DAILY
+      "WEEKLY:MO"       → RRULE:FREQ=WEEKLY;BYDAY=MO
+      "WEEKLY:MO,WE"    → RRULE:FREQ=WEEKLY;BYDAY=MO,WE
+      "MONTHLY:15"      → RRULE:FREQ=MONTHLY;BYMONTHDAY=15
+
+    Devuelve una lista con el RRULE string (formato que exige Google Calendar API),
+    o None si el patrón es inválido o está vacío.
+    """
+    if not pattern:
+        return None
+
+    pattern = pattern.strip().upper()
+
+    if pattern == "DAILY":
+        return ["RRULE:FREQ=DAILY"]
+
+    if pattern.startswith("WEEKLY:"):
+        days = pattern.split(":", 1)[1]
+        valid_days = {"MO", "TU", "WE", "TH", "FR", "SA", "SU"}
+        day_list = [d.strip() for d in days.split(",")]
+        if all(d in valid_days for d in day_list) and day_list:
+            return [f"RRULE:FREQ=WEEKLY;BYDAY={','.join(day_list)}"]
+
+    if pattern.startswith("MONTHLY:"):
+        day_of_month = pattern.split(":", 1)[1].strip()
+        if day_of_month.isdigit() and 1 <= int(day_of_month) <= 31:
+            return [f"RRULE:FREQ=MONTHLY;BYMONTHDAY={day_of_month}"]
+
+    return None
 
 
 # ── Eliminación de eventos ─────────────────────────────────────────────────────
@@ -213,4 +252,5 @@ def _parse_event(event: dict) -> dict:
         "location": event.get("location"),
         "description": event.get("description"),
         "link": event.get("htmlLink"),
+        "recurrence": event.get("recurrence"),  # lista de RRULE strings o None
     }

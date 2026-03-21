@@ -38,7 +38,7 @@ crea eventos en Google Calendar para reuniones, y expone todo a través de un da
 
 - **Procesamiento manual de correos**: botón "Procesar ahora" en el dashboard
 - **Clasificación IA**: Gemini clasifica cada correo con categoría (reunion, urgente, promocion, informativo, otro) y genera un resumen
-- **Auto-agendado de reuniones**: correos clasificados como `reunion` se crean automáticamente en Google Calendar
+- **Auto-agendado de reuniones**: correos clasificados como `reunion` se crean automáticamente en Google Calendar, incluyendo **recurrencias** (diaria, semanal por días, mensual) detectadas por Gemini y convertidas a RRULE RFC 5545
 - **Filtro por fecha**: solo procesa correos llegados después de `GMAIL_FILTER_AFTER_DATE` (por defecto `2026/03/20`)
 - **Límite configurable**: hasta 100 correos por ciclo (`MAX_EMAILS_PER_RUN`)
 - **Historial SQLite**: todos los correos procesados se guardan localmente con categoría, resumen y timestamp

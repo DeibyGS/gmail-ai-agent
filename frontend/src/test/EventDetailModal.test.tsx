@@ -86,4 +86,37 @@ describe('EventDetailModal', () => {
     expect(screen.getByText('urgente')).toBeInTheDocument();
     expect(screen.getByText('personal')).toBeInTheDocument();
   });
+
+  it('NO muestra sección de recurrencia si el evento no es recurrente', () => {
+    render(<EventDetailModal event={mockEvent} meta={mockMeta} onDelete={vi.fn()} onClose={vi.fn()} onMetaChange={vi.fn()} />);
+    expect(screen.queryByText('Recurrencia')).not.toBeInTheDocument();
+  });
+
+  it('muestra la recurrencia semanal en español', () => {
+    const recurringEvent: CalendarEvent = {
+      ...mockEvent,
+      recurrence: ['RRULE:FREQ=WEEKLY;BYDAY=MO,WE'],
+    };
+    render(<EventDetailModal event={recurringEvent} meta={mockMeta} onDelete={vi.fn()} onClose={vi.fn()} onMetaChange={vi.fn()} />);
+    expect(screen.getByText('Recurrencia')).toBeInTheDocument();
+    expect(screen.getByText(/Cada semana · Lunes, Miércoles/)).toBeInTheDocument();
+  });
+
+  it('muestra la recurrencia diaria en español', () => {
+    const recurringEvent: CalendarEvent = {
+      ...mockEvent,
+      recurrence: ['RRULE:FREQ=DAILY'],
+    };
+    render(<EventDetailModal event={recurringEvent} meta={mockMeta} onDelete={vi.fn()} onClose={vi.fn()} onMetaChange={vi.fn()} />);
+    expect(screen.getByText(/Todos los días/)).toBeInTheDocument();
+  });
+
+  it('muestra la recurrencia mensual en español', () => {
+    const recurringEvent: CalendarEvent = {
+      ...mockEvent,
+      recurrence: ['RRULE:FREQ=MONTHLY;BYMONTHDAY=15'],
+    };
+    render(<EventDetailModal event={recurringEvent} meta={mockMeta} onDelete={vi.fn()} onClose={vi.fn()} onMetaChange={vi.fn()} />);
+    expect(screen.getByText(/Cada mes · día 15/)).toBeInTheDocument();
+  });
 });

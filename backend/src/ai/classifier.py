@@ -68,6 +68,14 @@ INSTRUCCIONES:
 
 3. Si la categoría es "reunion", extrae los datos del evento. Si no, pon null.
 
+4. Si el evento es recurrente (se repite), indica el patrón con este formato exacto:
+   - Solo semanal con días específicos: "WEEKLY:MO", "WEEKLY:MO,WE", "WEEKLY:TU,TH,FR"
+   - Diario: "DAILY"
+   - Mensual con día del mes: "MONTHLY:15" (donde 15 es el día del mes)
+   - Si NO se repite o no hay suficiente información: null
+
+   Códigos de días: MO=lunes, TU=martes, WE=miércoles, TH=jueves, FR=viernes, SA=sábado, SU=domingo
+
 FORMATO DE RESPUESTA (solo el JSON, sin markdown):
 {{
   "category": "una de las 5 categorías",
@@ -77,7 +85,8 @@ FORMATO DE RESPUESTA (solo el JSON, sin markdown):
     "date": "fecha en formato YYYY-MM-DD o null si no se menciona",
     "time": "hora en formato HH:MM o null si no se menciona",
     "location": "lugar o enlace de videollamada o null si no se menciona",
-    "description": "descripción adicional del evento"
+    "description": "descripción adicional del evento",
+    "recurrence": "patrón de recurrencia según instrucción 4, o null si no se repite"
   }}
 }}
 

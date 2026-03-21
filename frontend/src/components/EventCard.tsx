@@ -57,6 +57,9 @@ export default function EventCard({ event, meta, onEdit, onDelete }: Props) {
         <div style={topRow}>
           <span style={title}>{event.title}</span>
           <span style={{ ...badge, background: meta.color }}>{meta.label}</span>
+          {event.recurrence && event.recurrence.length > 0 && (
+            <span style={badgeRecurrent}>🔁 Recurrente</span>
+          )}
         </div>
 
         {showTime && (
@@ -136,6 +139,17 @@ const topRow: React.CSSProperties    = { display: 'flex', alignItems: 'center', 
 const title: React.CSSProperties     = { fontFamily: theme.fonts.heading, fontWeight: 600, fontSize: '0.9rem', color: theme.colors.textPrimary, flex: 1, minWidth: 0 };
 const badge: React.CSSProperties     = {
   color: '#fff',
+  borderRadius: theme.radius.pill,
+  padding: '1px 8px',
+  fontFamily: theme.fonts.mono,
+  fontSize: '0.7rem',
+  fontWeight: 600,
+  whiteSpace: 'nowrap',
+};
+const badgeRecurrent: React.CSSProperties = {
+  background: 'rgba(34,211,238,0.12)',
+  color: theme.colors.accent,
+  border: '1px solid rgba(34,211,238,0.3)',
   borderRadius: theme.radius.pill,
   padding: '1px 8px',
   fontFamily: theme.fonts.mono,
