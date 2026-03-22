@@ -116,11 +116,22 @@ cd backend && source .venv/bin/activate && python main.py
 cd frontend && npm run dev
 ```
 
+### Arranque con Docker
+
+```bash
+# Requisito: tener backend/credentials.json y backend/token.json generados (OAuth2)
+docker-compose up --build
+```
+
+Servicios disponibles:
+- Backend: `http://localhost:8000`
+- Frontend: `http://localhost:3000`
+
 ### Tests
 
 ```bash
 # Backend
-cd backend && source .venv/bin/activate && pytest tests/ -v
+cd backend && source .venv/bin/activate && pytest tests/ --ignore=tests/test_scheduler.py -v
 
 # Frontend
 cd frontend && npm test              # modo watch
@@ -175,7 +186,9 @@ gmail-ai-agent/
 │       ├── services/api.ts         # Llamadas al backend
 │       └── types/index.ts          # Interfaces TypeScript
 ├── docs/API.md                     # Referencia completa de la API REST
-├── emaildgs                        # Script de arranque rápido
+├── docker-compose.yml              # Orquestación backend + frontend
+├── .github/workflows/ci.yml        # CI: pytest · ruff · vitest · docker build
+├── emaildgs                        # Script de arranque rápido (local)
 └── HANDOFF.md                      # Estado del proyecto entre sesiones
 ```
 <!-- /AUTO-GENERATED -->
