@@ -1,0 +1,21 @@
+# Credenciales OAuth — NUNCA en la imagen
+credentials.json
+token.json
+.env
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Tests (no necesarios en producción)
+tests/
+
+# Git y sistema
+.git/
+.DS_Store
