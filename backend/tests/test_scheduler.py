@@ -88,23 +88,21 @@ class TestRunProcessingCycle:
         assert "omitido" in captured.out.lower()
 
     def test_no_hace_nada_si_no_hay_correos(self, capsys):
-        """Si Gmail devuelve lista vacía, no debe clasificar ni crear eventos."""
+        """Si Gmail devuelve lista vacía, no debe clasificar correos."""
         from src.scheduler.job import run_processing_cycle
 
         with patch("src.scheduler.job.is_quiet_hours", return_value=False), \
              patch("src.scheduler.job.get_unread_emails", return_value=[]), \
-             patch("src.scheduler.job.classify_emails") as mock_classify, \
-             patch("src.scheduler.job.create_event_from_email") as mock_calendar:
+             patch("src.scheduler.job.classify_emails") as mock_classify:
 
             run_processing_cycle()
 
             mock_classify.assert_not_called()
-            mock_calendar.assert_not_called()
 
     def test_ciclo_completo_con_correo_reunion(self):
         """
-        Con un correo de categoría 'reunion' y event_data válido:
-        - debe llamar a create_event_from_email
+        Con un correo de categoría 'reunion':
+        - NO debe llamar a create_event_from_email (agendado es manual)
         - debe marcar el correo como leído
         """
         from src.scheduler.job import run_processing_cycle
@@ -121,21 +119,17 @@ class TestRunProcessingCycle:
         with patch("src.scheduler.job.is_quiet_hours", return_value=False), \
              patch("src.scheduler.job.get_unread_emails", return_value=[email]), \
              patch("src.scheduler.job.classify_emails", return_value=[email]), \
-             patch("src.scheduler.job.create_event_from_email", return_value={"id": "ev1"}) as mock_calendar, \
              patch("src.scheduler.job.mark_as_read") as mock_mark:
 
             run_processing_cycle()
 
-            # El evento debe crearse con los datos del correo
-            mock_calendar.assert_called_once_with(event_data)
             # El correo debe marcarse como leído
             mock_mark.assert_called_once_with("abc123")
 
     def test_ciclo_con_correo_no_reunion(self):
         """
         Con un correo de categoría distinta a 'reunion':
-        - NO debe llamar a create_event_from_email
-        - Sí debe marcar el correo como leído
+        - debe marcar el correo como leído
         """
         from src.scheduler.job import run_processing_cycle
 
@@ -144,19 +138,16 @@ class TestRunProcessingCycle:
         with patch("src.scheduler.job.is_quiet_hours", return_value=False), \
              patch("src.scheduler.job.get_unread_emails", return_value=[email]), \
              patch("src.scheduler.job.classify_emails", return_value=[email]), \
-             patch("src.scheduler.job.create_event_from_email") as mock_calendar, \
              patch("src.scheduler.job.mark_as_read") as mock_mark:
 
             run_processing_cycle()
 
-            mock_calendar.assert_not_called()
             mock_mark.assert_called_once_with("xyz789")
 
     def test_ciclo_con_reunion_sin_event_data(self):
         """
-        Un correo de categoría 'reunion' pero con event_data=None:
-        - NO debe crear evento (faltan datos)
-        - Sí debe marcar como leído
+        Un correo de categoría 'reunion' con event_data=None:
+        - debe marcar como leído (el agendado es responsabilidad del usuario)
         """
         from src.scheduler.job import run_processing_cycle
 
@@ -165,19 +156,16 @@ class TestRunProcessingCycle:
         with patch("src.scheduler.job.is_quiet_hours", return_value=False), \
              patch("src.scheduler.job.get_unread_emails", return_value=[email]), \
              patch("src.scheduler.job.classify_emails", return_value=[email]), \
-             patch("src.scheduler.job.create_event_from_email") as mock_calendar, \
              patch("src.scheduler.job.mark_as_read") as mock_mark:
 
             run_processing_cycle()
 
-            mock_calendar.assert_not_called()
             mock_mark.assert_called_once_with("zzz000")
 
     def test_ciclo_procesa_multiples_correos(self):
         """
         Con múltiples correos de distintas categorías:
-        - Solo crea eventos para los que son 'reunion' con event_data
-        - Marca todos como leídos
+        - Marca todos como leídos (sin auto-agendado)
         """
         from src.scheduler.job import run_processing_cycle
 
@@ -187,20 +175,15 @@ class TestRunProcessingCycle:
             make_email("id1", "reunion", event_data=event_data),
             make_email("id2", "promocion", event_data=None),
             make_email("id3", "recordatorio", event_data=None),
-            make_email("id4", "reunion", event_data=None),  # reunion sin datos
+            make_email("id4", "reunion", event_data=None),
         ]
 
         with patch("src.scheduler.job.is_quiet_hours", return_value=False), \
              patch("src.scheduler.job.get_unread_emails", return_value=emails), \
              patch("src.scheduler.job.classify_emails", return_value=emails), \
-             patch("src.scheduler.job.create_event_from_email", return_value={"id": "ev_new"}) as mock_calendar, \
              patch("src.scheduler.job.mark_as_read") as mock_mark:
 
             run_processing_cycle()
-
-            # Solo id1 tiene reunion + event_data → 1 evento
-            assert mock_calendar.call_count == 1
-            mock_calendar.assert_called_once_with(event_data)
 
             # Los 4 correos deben marcarse como leídos
             assert mock_mark.call_count == 4
@@ -226,7 +209,6 @@ class TestRunProcessingCycle:
         with patch("src.scheduler.job.is_quiet_hours", return_value=False), \
              patch("src.scheduler.job.get_unread_emails", return_value=[email1, email2]), \
              patch("src.scheduler.job.classify_emails", return_value=[email1, email2]), \
-             patch("src.scheduler.job.create_event_from_email"), \
              patch("src.scheduler.job.mark_as_read", side_effect=mark_side_effect) as mock_mark:
 
             # No debe lanzar excepción aunque uno falle
@@ -249,14 +231,13 @@ class TestRunProcessingCycle:
         with patch("src.scheduler.job.is_quiet_hours", return_value=False), \
              patch("src.scheduler.job.get_unread_emails", return_value=emails), \
              patch("src.scheduler.job.classify_emails", return_value=emails), \
-             patch("src.scheduler.job.create_event_from_email", return_value={"id": "ev"}), \
              patch("src.scheduler.job.mark_as_read"):
 
             run_processing_cycle()
 
         captured = capsys.readouterr()
         assert "2" in captured.out   # 2 correos procesados
-        assert "1" in captured.out   # 1 evento creado
+        assert "1" in captured.out   # 1 reunión detectada para agendar manualmente
 
 
 # ── Tests de start_scheduler ──────────────────────────────────────────────────

@@ -38,7 +38,8 @@ crea eventos en Google Calendar para reuniones, y expone todo a través de un da
 
 - **Procesamiento manual de correos**: botón "Procesar ahora" en el dashboard
 - **Clasificación IA**: Gemini clasifica cada correo con categoría (reunion, urgente, promocion, informativo, otro) y genera un resumen
-- **Auto-agendado de reuniones**: correos clasificados como `reunion` se crean automáticamente en Google Calendar, incluyendo **recurrencias** (diaria, semanal por días, mensual). Si el email incluye un adjunto `.ics` (iCalendar), los datos del evento se extraen directamente del archivo (fecha, hora, recurrencia, ubicación) sin depender de IA. Si no hay `.ics`, Gemini extrae los datos del cuerpo del correo.
+- **Agendado manual de reuniones**: correos clasificados como `reunion` muestran un botón "📅 Agendar" que abre un modal pre-llenado con los datos extraídos por Gemini (título, fecha, hora, ubicación, descripción). El usuario revisa y confirma antes de crear el evento. Si el email incluye un adjunto `.ics`, los datos se extraen directamente del archivo con mayor precisión.
+- **Panel de configuración** (`/settings`): ajusta `MAX_EMAILS_PER_RUN`, `CHECK_INTERVAL_MINUTES`, `GMAIL_FILTER_AFTER_DATE` y horario de descanso (`QUIET_HOURS_START`/`END`) desde el dashboard. Los cambios se persisten en `.env` y se aplican sin reiniciar.
 - **Filtro por fecha**: solo procesa correos llegados después de `GMAIL_FILTER_AFTER_DATE` (por defecto `2026/03/20`)
 - **Límite configurable**: hasta 100 correos por ciclo (`MAX_EMAILS_PER_RUN`)
 - **Historial SQLite**: todos los correos procesados se guardan localmente con categoría, resumen y timestamp
@@ -151,6 +152,9 @@ Copiar `backend/.env.example` a `backend/.env` y completar:
 | `GEMINI_API_KEY` | API Key de Google Gemini | `AIza...` |
 | `GMAIL_FILTER_AFTER_DATE` | Solo procesar correos después de esta fecha | `2026/03/20` |
 | `MAX_EMAILS_PER_RUN` | Máximo de correos por ciclo | `100` |
+| `CHECK_INTERVAL_MINUTES` | Intervalo del scheduler automático | `30` |
+| `QUIET_HOURS_START` | Hora de inicio del descanso (0–23) | `0` |
+| `QUIET_HOURS_END` | Hora de fin del descanso (0–24) | `8` |
 
 Las credenciales OAuth2 de Google se guardan en `backend/credentials.json` y `backend/token.json` (no se suben al repositorio).
 <!-- /AUTO-GENERATED -->

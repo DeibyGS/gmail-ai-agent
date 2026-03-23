@@ -10,6 +10,7 @@ export default function Navbar() {
         <NavLink to="/" style={navStyle} end>Correos</NavLink>
         <NavLink to="/stats" style={navStyle}>Estadísticas</NavLink>
         <NavLink to="/calendar" style={navStyle}>Calendario</NavLink>
+        <NavLink to="/settings" style={navStyle}>Ajustes</NavLink>
       </div>
     </nav>
   );

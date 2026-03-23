@@ -38,6 +38,9 @@ MAX_EMAILS_PER_RUN = int(os.getenv("MAX_EMAILS_PER_RUN", 100))
 # Fecha de corte: solo se procesan correos recibidos a partir de esta fecha.
 # Formato YYYY/MM/DD — operador after: de la API de Gmail.
 GMAIL_FILTER_AFTER_DATE = os.getenv("GMAIL_FILTER_AFTER_DATE", "2026/03/20")
+# Horario de descanso: el ciclo automático no corre entre estas horas (0-23).
+QUIET_HOURS_START = int(os.getenv("QUIET_HOURS_START", 0))
+QUIET_HOURS_END   = int(os.getenv("QUIET_HOURS_END", 8))
 
 
 def get_google_credentials() -> Credentials:

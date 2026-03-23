@@ -7,6 +7,8 @@ export interface EventData {
   date?: string;
   time?: string;
   location?: string;
+  description?: string;
+  recurrence?: string | null;
 }
 
 // Correo clasificado devuelto por GET /api/emails
@@ -84,6 +86,15 @@ export interface SenderStat {
 export interface SendersStats {
   senders: SenderStat[];
   fetched_at: string;
+}
+
+// Configuración operativa del agente — GET/PATCH /api/config
+export interface AppConfig {
+  max_emails_per_run:      number;
+  check_interval_minutes:  number;
+  gmail_filter_after_date: string;
+  quiet_hours_start:       number;
+  quiet_hours_end:         number;
 }
 
 // Body para POST /api/calendar/events

@@ -31,6 +31,7 @@ from src.database.repository import (
     get_processed_today, get_processed_history,
 )
 from src.api.calendar_router import router as calendar_router
+from src.api.config_router import router as config_router
 
 
 # ── Inicialización de la app FastAPI ──────────────────────────────────────────
@@ -57,8 +58,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Montar el router de calendario
+# Montar routers
 app.include_router(calendar_router)
+app.include_router(config_router)
 
 
 # ── Endpoints de correos ───────────────────────────────────────────────────────
