@@ -1,5 +1,5 @@
 # HANDOFF — gmail-ai-agent
-> Archivo de traspaso para Claude. Actualizado automáticamente por `day-wrap` al cerrar cada jornada.
+> Archivo de traspaso para Claude. Actualizado automáticamente al cerrar cada jornada.
 
 ---
 
@@ -7,41 +7,41 @@
 `/Users/db/Documents/GitHub/gmail-ai-agent`
 
 ## Stack
-- **Backend:** Python 3.11+ · FastAPI · uvicorn · APScheduler
-- **AI:** Google Gemini API
+- **Backend:** Python 3.11+ · FastAPI · uvicorn (reload=True) · APScheduler
+- **AI:** Google Gemini API (gemini-2.5-flash)
 - **Google APIs:** Gmail API · Google Calendar API (OAuth2)
 - **Frontend:** React + TypeScript · Vite
 - **Tests:** pytest · httpx (backend) · Vitest + React Testing Library (frontend)
+- **Infra:** Docker · docker-compose · GitHub Actions CI
 
 ---
 
 ## Estado actual
-- **Progreso:** 98% (13 PRs mergeados + PR #14 en revisión)
-- **Último PR mergeado:** PR #13 — `test(frontend): Vitest + RTL + coverage`
-- **Rama activa:** `feature/ui-redesign-glow` (PR #14 abierto, NO mergear sin revisión)
-- **Último fix:** bugs calendar delete/edit "not found" + create NaN invalid date
+- **Rama activa:** `feature/briefing-and-fts-search`
+- **PR abierto:** #22 — `feat: daily briefing with Gemini + FTS5 full-text search`
+- **PR pendiente de merge:** #21 — `feat: manual meeting scheduling + settings panel`
+- **Tests:** 85 backend ✅ · 93 frontend ✅ (178 total)
 
 ---
 
 ## Empezar aquí (próxima sesión)
 
 1. `git checkout main && git pull origin main` — arrancar desde main limpio
-2. Verificar que PR #13 está mergeado en GitHub
-3. `cd frontend && npm test` — confirmar que los 44 tests siguen pasando
-4. Elegir próxima feature (ver tabla de pendientes abajo)
-5. Activar pipeline con `/dev <feature>`
+2. Mergear PR #21 y PR #22 si están aprobados
+3. `cd backend && source .venv/bin/activate && pytest tests/ -q` — confirmar 85 tests verdes
+4. Elegir próxima tarea de la tabla de pendientes
+5. Activar pipeline con `/dev <tarea>`
 
 ---
 
 ## Tareas pendientes (priorizadas)
 
-| Prioridad | Tarea | Archivo/Área |
-|-----------|-------|--------------|
-| Alta | GitHub Actions CI: correr tests en cada PR | `.github/workflows/` |
-| Alta | Docker: docker-compose para backend + frontend | `Dockerfile` · `docker-compose.yml` |
-| Media | Tests para EmailsPage y StatsPage (0% coverage actual) | `frontend/src/test/` |
-| Baja | Limpiar ramas locales ya mergeadas | git |
-| Baja | `git branch --unset-upstream` en feature/frontend-tests | git |
+| Prioridad | Tarea | Área |
+|-----------|-------|------|
+| Alta | Mergear PR #21 (manual scheduling + settings) | GitHub |
+| Alta | Mergear PR #22 (briefing + FTS5 search) | GitHub |
+| Media | Tests para BriefingPage (0% cobertura) | `frontend/src/test/` |
+| Baja | Tests para `briefing_router.py` y `search_emails_fts()` | `backend/tests/` |
 
 ---
 
@@ -49,28 +49,32 @@
 
 | Método | Ruta | Descripción |
 |--------|------|-------------|
-| GET | `/api/emails` | Correos no leídos clasificados |
-| GET | `/api/emails/stats` | Conteo por categoría |
-| GET | `/api/emails/history` | Historial SQLite con filtros |
-| GET | `/api/emails/stats/history` | Estadísticas históricas |
-| GET | `/api/emails/stats/daily` | Volumen diario |
-| GET | `/api/emails/stats/senders` | Top remitentes |
+| GET | `/api/emails` | Correos no leídos clasificados (9 categorías) |
+| GET | `/api/emails/stats` | Conteo por categoría en tiempo real |
+| GET | `/api/emails/processed` | Historial SQLite (`?view=today\|history`) |
+| GET | `/api/emails/search` | Búsqueda FTS5 (`?q=texto&category=&since=&until=`) |
+| GET | `/api/stats/categories` | Distribución histórica por categoría |
+| GET | `/api/stats/daily` | Volumen diario últimos N días |
+| GET | `/api/stats/senders` | Top remitentes |
 | POST | `/api/process` | Forzar ciclo de procesamiento |
+| GET | `/api/briefing` | Briefing ejecutivo Gemini (`?date=YYYY-MM-DD`) |
+| GET/PATCH | `/api/config` | Ver y actualizar configuración operativa |
 | GET | `/api/calendar/events` | Próximos eventos (30 días) |
 | POST | `/api/calendar/events` | Crear evento manual |
+| PATCH | `/api/calendar/events/{id}` | Editar evento |
 | DELETE | `/api/calendar/events/{id}` | Eliminar evento |
-| GET | `/health` | Health check |
 
 ---
 
 ## Notas técnicas clave
 
-- **Editar evento:** flujo DELETE + POST (Google Calendar no tiene PATCH nativo)
-- **Pipeline optimizado:** `quality.md` fusiona refactor + security (~35% menos tokens por pipeline)
-- **Telemetría activa:** `CLAUDE_CODE_ENABLE_TELEMETRY=1` en `~/.claude/settings.json` — muestra tokens en consola
-- **Checkpoint Step 8.5:** Scrum Master verifica todos los agentes antes del git — obligatorio
-- **Protocolo 3 opciones:** siempre presentar antes de ejecutar cualquier tarea
+- **FTS5:** tabla virtual `emails_fts` creada en `init_db.py`. Se reconstruye (DELETE + repopulate) en cada arranque para mantenerse sincronizada. En tests, el fixture `db` de `test_database.py` crea la tabla con SQL crudo.
+- **Briefing:** `briefing_router.py` usa máximo 50 correos en el prompt de Gemini para no exceder tokens. Si no hay correos del día, devuelve respuesta vacía sin llamar a Gemini.
+- **Highlight FTS5:** el componente `<Highlight>` en EmailsPage usa un regex case-insensitive para marcar coincidencias con `<mark>`.
+- **CI GEMINI_API_KEY:** usa `dummy-key-for-ci-tests` en el step de pytest. Funciona porque los tests mockean Gemini.
+- **Docker:** `docker-compose up --build` arranca todo. Requiere `backend/credentials.json` y `backend/token.json` montados como volúmenes.
+- **Hot-reload activo:** `uvicorn.run("src.api.routes:app", reload=True)` — requiere string, no objeto app.
 
 ---
 
-*Última actualización: 2026-03-20*
+*Última actualización: 2026-03-23*
