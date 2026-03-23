@@ -97,6 +97,30 @@ export interface AppConfig {
   quiet_hours_end:         number;
 }
 
+// Briefing diario — respuesta de GET /api/briefing
+export interface BriefingUrgent {
+  subject: string;
+  sender:  string;
+  action:  string;
+}
+
+export interface BriefingMeeting {
+  subject: string;
+  sender:  string;
+  note:    string;
+}
+
+export interface BriefingData {
+  date:             string;
+  total:            number;
+  summary:          string;
+  urgent_emails:    BriefingUrgent[];
+  pending_meetings: BriefingMeeting[];
+  by_category:      Record<string, number>;
+  recommendations:  string[];
+  generated_at:     string;
+}
+
 // Body para POST /api/calendar/events
 export interface CreateEventPayload {
   title: string;

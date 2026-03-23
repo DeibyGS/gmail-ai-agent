@@ -5,6 +5,7 @@ import EmailsPage from './pages/EmailsPage';
 import StatsPage from './pages/StatsPage';
 import CalendarPage from './pages/CalendarPage';
 import SettingsPage from './pages/SettingsPage';
+import BriefingPage from './pages/BriefingPage';
 import { theme } from './theme';
 
 export default function App() {
@@ -18,6 +19,7 @@ export default function App() {
           <Route path="/stats" element={<StatsPage />} />
           <Route path="/calendar" element={<CalendarPage />} />
           <Route path="/settings" element={<SettingsPage />} />
+          <Route path="/briefing" element={<BriefingPage />} />
         </Routes>
         {/* Toast notifications globales — tema dark con acento del design system */}
         <Toaster

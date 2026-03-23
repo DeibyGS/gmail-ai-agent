@@ -6,7 +6,7 @@ Se llama una vez al arrancar la aplicación para asegurar que las tablas existen
 """
 
 from pathlib import Path
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker, Session
 from src.database.models import Base
 
@@ -25,10 +25,42 @@ SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
 def init_db() -> None:
     """
     Crea todas las tablas definidas en models.py si no existen.
+    También crea/sincroniza la tabla FTS5 para búsqueda de texto completo.
     Seguro de llamar múltiples veces (no borra datos existentes).
     """
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
     Base.metadata.create_all(bind=engine)
+    _init_fts()
+
+
+def _init_fts() -> None:
+    """
+    Crea la tabla virtual FTS5 'emails_fts' y la sincroniza con emails_processed.
+
+    FTS5 (Full-Text Search 5) es una extensión de SQLite que permite buscar texto
+    de forma eficiente en múltiples columnas simultáneamente.
+
+    La tabla se reconstruye en cada arranque para mantenerla sincronizada
+    con los datos reales (es solo un índice de búsqueda, no una fuente de verdad).
+    """
+    with engine.connect() as conn:
+        # Crear tabla virtual FTS5 si no existe aún
+        conn.execute(text("""
+            CREATE VIRTUAL TABLE IF NOT EXISTS emails_fts USING fts5(
+                email_id UNINDEXED,
+                subject,
+                sender,
+                summary,
+                tokenize='unicode61'
+            )
+        """))
+        # Sincronizar: limpiar y repoblar desde la tabla principal
+        conn.execute(text("DELETE FROM emails_fts"))
+        conn.execute(text("""
+            INSERT INTO emails_fts(rowid, email_id, subject, sender, summary)
+            SELECT id, email_id, subject, sender, summary FROM emails_processed
+        """))
+        conn.commit()
 
 
 def get_db() -> Session:

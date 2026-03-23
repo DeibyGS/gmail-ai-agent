@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { Email, EmailStats, CalendarEvent, CreateEventPayload, CategoryStats, DailyStats, SendersStats, ProcessedEmail, AppConfig } from '../types';
+import type { Email, EmailStats, CalendarEvent, CreateEventPayload, CategoryStats, DailyStats, SendersStats, ProcessedEmail, AppConfig, BriefingData } from '../types';
 
 /** Extrae el campo `detail` de un error de axios, o devuelve el fallback. */
 export function getApiError(err: unknown, fallback: string): string {
@@ -82,5 +82,25 @@ export const fetchConfig = async (): Promise<AppConfig> => {
 
 export const updateConfig = async (patch: Partial<AppConfig>): Promise<AppConfig> => {
   const { data } = await api.patch<AppConfig>('/config', patch);
+  return data;
+};
+
+export const searchEmails = async (
+  q: string,
+  category?: string,
+  since?: string,
+  until?: string,
+): Promise<ProcessedEmail[]> => {
+  const params: Record<string, unknown> = { q };
+  if (category) params.category = category;
+  if (since)    params.since    = since;
+  if (until)    params.until    = until;
+  const { data } = await api.get<{ emails: ProcessedEmail[] }>('/emails/search', { params });
+  return data.emails;
+};
+
+export const fetchBriefing = async (date?: string): Promise<BriefingData> => {
+  const params = date ? { date } : {};
+  const { data } = await api.get<BriefingData>('/briefing', { params });
   return data;
 };

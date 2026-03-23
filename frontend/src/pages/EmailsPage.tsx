@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import type { Email, ProcessedEmail, EmailCategory, CreateEventPayload, EventMeta } from '../types';
-import { fetchEmails, fetchProcessedEmails, triggerProcess, createCalendarEvent } from '../services/api';
+import { fetchEmails, fetchProcessedEmails, triggerProcess, createCalendarEvent, searchEmails } from '../services/api';
 import EmailCard from '../components/EmailCard';
 import EventCreateModal from '../components/EventCreateModal';
 import Spinner from '../components/Spinner';
@@ -9,7 +9,10 @@ import { theme, btnStyles } from '../theme';
 
 type Tab = 'pending' | 'today' | 'history';
 
-const CATEGORIES: EmailCategory[] = ['reunion', 'urgente', 'informativo', 'promocion', 'otro'];
+const CATEGORIES: EmailCategory[] = [
+  'reunion', 'urgente', 'recordatorio', 'factura',
+  'soporte', 'notificacion', 'personal', 'promocion', 'informativo', 'otro',
+];
 
 export default function EmailsPage() {
   const [activeTab, setActiveTab]           = useState<Tab>('pending');
@@ -18,10 +21,16 @@ export default function EmailsPage() {
   const [history, setHistory]               = useState<ProcessedEmail[]>([]);
   const [filterCategory, setFilterCategory] = useState('');
   const [filterSince, setFilterSince]       = useState('');
+  const [filterSearch, setFilterSearch]     = useState('');
   const [loading, setLoading]               = useState(false);
   const [processing, setProcessing]         = useState(false);
   const [error, setError]                   = useState<string | null>(null);
-  const [schedulingEmail, setSchedulingEmail] = useState<Email | null>(null);
+  const [schedulingEmail, setSchedulingEmail]   = useState<Email | null>(null);
+  const [categoryOverrides, setCategoryOverrides] = useState<Record<string, EmailCategory>>({});
+  const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
+
+  const effectiveCategory = (email: Email): EmailCategory =>
+    categoryOverrides[email.id] ?? email.category;
 
   // Carga pendientes o procesados hoy
   const loadTab = useCallback(async (tab: Exclude<Tab, 'history'>) => {
@@ -42,16 +51,26 @@ export default function EmailsPage() {
     }
   }, []);
 
-  // Carga el historial con los filtros actuales
-  const loadHistory = useCallback(async (since: string, category: string) => {
+  // Carga el historial con los filtros actuales (fecha, categoría y búsqueda FTS5)
+  const loadHistory = useCallback(async (since: string, category: string, search: string) => {
     setLoading(true);
     setError(null);
     try {
-      const data = await fetchProcessedEmails(
-        'history',
-        since || undefined,
-        category || undefined,
-      );
+      let data: ProcessedEmail[];
+      if (search.trim()) {
+        // Cuando hay texto de búsqueda, usa FTS5 en el backend
+        data = await searchEmails(
+          search.trim(),
+          category || undefined,
+          since || undefined,
+        );
+      } else {
+        data = await fetchProcessedEmails(
+          'history',
+          since || undefined,
+          category || undefined,
+        );
+      }
       setHistory(data);
     } catch {
       setError('No se pudo conectar con el backend.');
@@ -64,15 +83,15 @@ export default function EmailsPage() {
   useEffect(() => {
     if (activeTab === 'pending') loadTab('pending');
     else if (activeTab === 'today') loadTab('today');
-    else loadHistory(filterSince, filterCategory);
+    else loadHistory(filterSince, filterCategory, filterSearch);
   }, [activeTab]);    // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auto-filter historial con debounce 300ms al cambiar filtros
   useEffect(() => {
     if (activeTab !== 'history') return;
-    const timer = setTimeout(() => loadHistory(filterSince, filterCategory), 300);
+    const timer = setTimeout(() => loadHistory(filterSince, filterCategory, filterSearch), 300);
     return () => clearTimeout(timer);
-  }, [filterSince, filterCategory, activeTab, loadHistory]);
+  }, [filterSince, filterCategory, filterSearch, activeTab, loadHistory]);
 
   const handleProcess = async () => {
     setProcessing(true);
@@ -93,7 +112,7 @@ export default function EmailsPage() {
     }
   };
 
-  const hasHistoryFilters = filterSince !== '' || filterCategory !== '';
+  const hasHistoryFilters = filterSince !== '' || filterCategory !== '' || filterSearch !== '';
 
   const handleScheduleConfirm = async (payload: CreateEventPayload, _meta: EventMeta) => {
     try {
@@ -162,22 +181,50 @@ export default function EmailsPage() {
           {loading && <Spinner label="Cargando correos pendientes..." />}
           {!loading && pending.length === 0 && <EmptyInboxCard />}
           <div style={styles.list}>
-            {pending.map(email => (
-              <div key={email.id}>
-                <EmailCard email={email} />
-                {email.category === 'reunion' && (
-                  <div style={styles.scheduleRow}>
-                    <button
-                      className="btn-primary"
-                      style={{ ...btnStyles.primary, fontSize: '0.8rem', padding: '0.3rem 0.9rem' }}
-                      onClick={() => setSchedulingEmail(email)}
-                    >
-                      📅 Agendar
-                    </button>
+            {pending.map(email => {
+              const category = effectiveCategory(email);
+              const isEditing = editingCategoryId === email.id;
+              return (
+                <div key={email.id}>
+                  <EmailCard email={{ ...email, category }} />
+                  <div style={styles.cardActions}>
+                    {/* ── Cambiar tipo ──────────────────────────── */}
+                    {isEditing ? (
+                      <select
+                        autoFocus
+                        value={category}
+                        style={styles.categorySelect}
+                        onChange={e => {
+                          setCategoryOverrides(prev => ({ ...prev, [email.id]: e.target.value }));
+                          setEditingCategoryId(null);
+                        }}
+                        onBlur={() => setEditingCategoryId(null)}
+                      >
+                        {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                      </select>
+                    ) : (
+                      <button
+                        style={styles.editCategoryBtn}
+                        onClick={() => setEditingCategoryId(email.id)}
+                        title="Cambiar clasificación"
+                      >
+                        ✏️ Cambiar tipo
+                      </button>
+                    )}
+                    {/* ── Agendar (solo si es reunion) ──────────── */}
+                    {category === 'reunion' && !isEditing && (
+                      <button
+                        className="btn-primary"
+                        style={{ ...btnStyles.primary, fontSize: '0.8rem', padding: '0.3rem 0.9rem' }}
+                        onClick={() => setSchedulingEmail({ ...email, category })}
+                      >
+                        📅 Agendar
+                      </button>
+                    )}
                   </div>
-                )}
-              </div>
-            ))}
+                </div>
+              );
+            })}
           </div>
         </>
       )}
@@ -200,6 +247,15 @@ export default function EmailsPage() {
         <>
           {/* Filtros — auto-disparo, sin botón */}
           <div style={styles.filters}>
+            {/* Campo de búsqueda FTS5 */}
+            <input
+              type="search"
+              placeholder="Buscar en asunto, remitente o resumen..."
+              value={filterSearch}
+              onChange={e => setFilterSearch(e.target.value)}
+              style={{ ...styles.filterInput, minWidth: '240px' }}
+              title="Búsqueda full-text: busca en asunto, remitente y resumen simultáneamente"
+            />
             <input
               type="date"
               value={filterSince}
@@ -220,7 +276,7 @@ export default function EmailsPage() {
               <button
                 className="btn-secondary"
                 style={{ ...btnStyles.secondary, fontSize: '0.8rem', padding: '0.35rem 0.8rem' }}
-                onClick={() => { setFilterSince(''); setFilterCategory(''); }}
+                onClick={() => { setFilterSince(''); setFilterCategory(''); setFilterSearch(''); }}
               >
                 Limpiar
               </button>
@@ -236,7 +292,9 @@ export default function EmailsPage() {
           )}
 
           <div style={styles.list}>
-            {history.map(email => <ProcessedEmailCard key={email.id} email={email} showDate />)}
+            {history.map(email => (
+              <ProcessedEmailCard key={email.id} email={email} showDate highlight={filterSearch} />
+            ))}
           </div>
         </>
       )}
@@ -347,7 +405,38 @@ function colorFor(cat: string) {
   return colorCache[cat];
 }
 
-function ProcessedEmailCard({ email, showDate = false }: { email: ProcessedEmail; showDate?: boolean }) {
+/** Resalta las ocurrencias de `term` dentro de `text` con un span amarillo. */
+function Highlight({ text, term }: { text: string; term: string }) {
+  if (!term.trim()) return <>{text}</>;
+  const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const parts = text.split(new RegExp(`(${escaped})`, 'gi'));
+  return (
+    <>
+      {parts.map((part, i) =>
+        part.toLowerCase() === term.toLowerCase()
+          ? <mark key={i} style={hlStyle}>{part}</mark>
+          : part
+      )}
+    </>
+  );
+}
+
+const hlStyle: React.CSSProperties = {
+  background: 'rgba(251,191,36,0.35)',
+  color: '#FCD34D',
+  borderRadius: '2px',
+  padding: '0 2px',
+};
+
+function ProcessedEmailCard({
+  email,
+  showDate = false,
+  highlight = '',
+}: {
+  email: ProcessedEmail;
+  showDate?: boolean;
+  highlight?: string;
+}) {
   const colors = colorFor(email.category);
   const time = new Date(email.processed_at).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
   const date = new Date(email.processed_at).toLocaleDateString('es-ES');
@@ -360,9 +449,11 @@ function ProcessedEmailCard({ email, showDate = false }: { email: ProcessedEmail
         </span>
         <span style={cardStyles.time}>{showDate ? `${date} ${time}` : time}</span>
       </div>
-      <p style={cardStyles.subject}>{email.subject}</p>
-      <p style={cardStyles.sender}>De: {email.sender}</p>
-      {email.summary && <p style={cardStyles.summary}>{email.summary}</p>}
+      <p style={cardStyles.subject}><Highlight text={email.subject} term={highlight} /></p>
+      <p style={cardStyles.sender}>De: <Highlight text={email.sender} term={highlight} /></p>
+      {email.summary && (
+        <p style={cardStyles.summary}><Highlight text={email.summary} term={highlight} /></p>
+      )}
     </div>
   );
 }
@@ -407,7 +498,27 @@ const styles: Record<string, React.CSSProperties> = {
     fontFamily: theme.fonts.body,
   },
   list:        { display: 'flex', flexDirection: 'column', gap: '0.75rem' },
-  scheduleRow: { display: 'flex', justifyContent: 'flex-end', marginTop: '0.35rem' },
+  cardActions: { display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '0.5rem', marginTop: '0.35rem' },
+  editCategoryBtn: {
+    background: 'none',
+    border: `1px solid ${theme.colors.border}`,
+    borderRadius: theme.radius.sm,
+    color: theme.colors.textMuted,
+    fontFamily: theme.fonts.body,
+    fontSize: '0.78rem',
+    padding: '0.25rem 0.65rem',
+    cursor: 'pointer',
+  },
+  categorySelect: {
+    background: theme.colors.surface,
+    border: `1px solid ${theme.colors.gradientStart}`,
+    borderRadius: theme.radius.sm,
+    color: theme.colors.textPrimary,
+    fontFamily: theme.fonts.body,
+    fontSize: '0.82rem',
+    padding: '0.25rem 0.5rem',
+    cursor: 'pointer',
+  },
   info:  { color: theme.colors.textMuted, fontFamily: theme.fonts.body, fontSize: '0.9rem' },
   error: { color: theme.colors.danger,   fontFamily: theme.fonts.body, fontSize: '0.9rem' },
 };
