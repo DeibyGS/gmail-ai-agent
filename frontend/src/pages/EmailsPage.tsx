@@ -1,7 +1,9 @@
 import { useEffect, useState, useCallback } from 'react';
-import type { Email, ProcessedEmail, EmailCategory } from '../types';
-import { fetchEmails, fetchProcessedEmails, triggerProcess } from '../services/api';
+import { toast } from 'sonner';
+import type { Email, ProcessedEmail, EmailCategory, CreateEventPayload, EventMeta } from '../types';
+import { fetchEmails, fetchProcessedEmails, triggerProcess, createCalendarEvent } from '../services/api';
 import EmailCard from '../components/EmailCard';
+import EventCreateModal from '../components/EventCreateModal';
 import Spinner from '../components/Spinner';
 import { theme, btnStyles } from '../theme';
 
@@ -19,6 +21,7 @@ export default function EmailsPage() {
   const [loading, setLoading]               = useState(false);
   const [processing, setProcessing]         = useState(false);
   const [error, setError]                   = useState<string | null>(null);
+  const [schedulingEmail, setSchedulingEmail] = useState<Email | null>(null);
 
   // Carga pendientes o procesados hoy
   const loadTab = useCallback(async (tab: Exclude<Tab, 'history'>) => {
@@ -92,8 +95,34 @@ export default function EmailsPage() {
 
   const hasHistoryFilters = filterSince !== '' || filterCategory !== '';
 
+  const handleScheduleConfirm = async (payload: CreateEventPayload, _meta: EventMeta) => {
+    try {
+      await createCalendarEvent(payload);
+      toast.success('Evento creado en Google Calendar ✓');
+    } catch {
+      toast.error('Error al crear el evento en Calendar.');
+    } finally {
+      setSchedulingEmail(null);
+    }
+  };
+
   return (
     <div style={styles.page}>
+
+      {/* ── Modal de agendado manual ─────────────────────────── */}
+      {schedulingEmail && (
+        <EventCreateModal
+          initialDate={schedulingEmail.event_data?.date ?? ''}
+          initialData={{
+            title:       schedulingEmail.event_data?.title    ?? schedulingEmail.subject,
+            time:        schedulingEmail.event_data?.time     ?? '',
+            location:    schedulingEmail.event_data?.location ?? '',
+            description: schedulingEmail.event_data?.description ?? '',
+          }}
+          onConfirm={handleScheduleConfirm}
+          onClose={() => setSchedulingEmail(null)}
+        />
+      )}
 
       {/* ── Header ──────────────────────────────────────────── */}
       <div style={styles.header}>
@@ -133,7 +162,22 @@ export default function EmailsPage() {
           {loading && <Spinner label="Cargando correos pendientes..." />}
           {!loading && pending.length === 0 && <EmptyInboxCard />}
           <div style={styles.list}>
-            {pending.map(email => <EmailCard key={email.id} email={email} />)}
+            {pending.map(email => (
+              <div key={email.id}>
+                <EmailCard email={email} />
+                {email.category === 'reunion' && (
+                  <div style={styles.scheduleRow}>
+                    <button
+                      className="btn-primary"
+                      style={{ ...btnStyles.primary, fontSize: '0.8rem', padding: '0.3rem 0.9rem' }}
+                      onClick={() => setSchedulingEmail(email)}
+                    >
+                      📅 Agendar
+                    </button>
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
         </>
       )}
@@ -362,7 +406,8 @@ const styles: Record<string, React.CSSProperties> = {
     color: theme.colors.textPrimary,
     fontFamily: theme.fonts.body,
   },
-  list:  { display: 'flex', flexDirection: 'column', gap: '0.75rem' },
+  list:        { display: 'flex', flexDirection: 'column', gap: '0.75rem' },
+  scheduleRow: { display: 'flex', justifyContent: 'flex-end', marginTop: '0.35rem' },
   info:  { color: theme.colors.textMuted, fontFamily: theme.fonts.body, fontSize: '0.9rem' },
   error: { color: theme.colors.danger,   fontFamily: theme.fonts.body, fontSize: '0.9rem' },
 };

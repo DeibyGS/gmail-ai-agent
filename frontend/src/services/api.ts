@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { Email, EmailStats, CalendarEvent, CreateEventPayload, CategoryStats, DailyStats, SendersStats, ProcessedEmail } from '../types';
+import type { Email, EmailStats, CalendarEvent, CreateEventPayload, CategoryStats, DailyStats, SendersStats, ProcessedEmail, AppConfig } from '../types';
 
 /** Extrae el campo `detail` de un error de axios, o devuelve el fallback. */
 export function getApiError(err: unknown, fallback: string): string {
@@ -73,4 +73,14 @@ export const createCalendarEvent = async (payload: CreateEventPayload): Promise<
 
 export const deleteCalendarEvent = async (eventId: string): Promise<void> => {
   await api.delete(`/calendar/events/${eventId}`);
+};
+
+export const fetchConfig = async (): Promise<AppConfig> => {
+  const { data } = await api.get<AppConfig>('/config');
+  return data;
+};
+
+export const updateConfig = async (patch: Partial<AppConfig>): Promise<AppConfig> => {
+  const { data } = await api.patch<AppConfig>('/config', patch);
+  return data;
 };

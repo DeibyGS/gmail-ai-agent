@@ -5,9 +5,11 @@ Flujo de cada ciclo:
 1. Obtiene correos no leídos de Gmail
 2. Los clasifica y resume con Gemini
 3. Guarda los resultados en SQLite (histórico persistente)
-4. Crea eventos en Calendar para correos tipo "reunion"
-5. Marca cada correo procesado como leído
-6. Imprime un resumen del ciclo
+4. Marca cada correo procesado como leído
+5. Imprime un resumen del ciclo
+
+Nota: el agendado de eventos en Calendar es MANUAL.
+El usuario selecciona los correos de reunión y los agenda desde el dashboard.
 """
 
 from datetime import datetime
@@ -16,18 +18,18 @@ from apscheduler.schedulers.background import BackgroundScheduler
 
 from src.gmail.client import get_unread_emails, mark_as_read
 from src.ai.classifier import classify_emails
-from src.calendar.client import create_event_from_email
 from src.database.init_db import get_db
 from src.database.repository import save_emails
-from config.settings import CHECK_INTERVAL_MINUTES
+from config.settings import CHECK_INTERVAL_MINUTES, QUIET_HOURS_START, QUIET_HOURS_END
 
 
 def is_quiet_hours() -> bool:
     """
-    Retorna True si la hora actual está en horario de descanso (00:00 – 07:59).
-    Durante este período el ciclo de procesamiento se omite.
+    Retorna True si la hora actual está en el horario de descanso configurado.
+    Los límites se leen de QUIET_HOURS_START y QUIET_HOURS_END en settings.
     """
-    return datetime.now().hour < 8
+    hour = datetime.now().hour
+    return QUIET_HOURS_START <= hour < QUIET_HOURS_END
 
 
 def run_processing_cycle() -> None:
@@ -37,9 +39,11 @@ def run_processing_cycle() -> None:
     1. Obtener correos no leídos
     2. Clasificarlos con Gemini
     3. Guardar en SQLite para histórico
-    4. Crear eventos en Calendar para reuniones con datos válidos
-    5. Marcar todos los correos procesados como leídos
-    6. Imprimir el resumen del ciclo
+    4. Marcar todos los correos procesados como leídos
+    5. Imprimir el resumen del ciclo
+
+    El agendado de Calendar es manual: el usuario usa el botón
+    "Agendar" en el dashboard para cada correo de reunión.
     """
     if is_quiet_hours():
         print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Ciclo omitido — horario de descanso (00:00–07:59).")
@@ -70,27 +74,18 @@ def run_processing_cycle() -> None:
     finally:
         db.close()
 
-    # ── Paso 4 y 5: Procesar cada correo ──────────────────────────────────────
-    events_created = 0
-
+    # ── Paso 4: Marcar correos como leídos ────────────────────────────────────
     for email in classified_emails:
-        category = email.get("category", "otro")
-        event_data = email.get("event_data")
-
-        if category == "reunion" and event_data:
-            result = create_event_from_email(event_data)
-            if result:
-                events_created += 1
-
         try:
             mark_as_read(email["id"])
         except Exception as e:
             print(f"  Error al marcar correo '{email.get('subject', '')}' como leído: {e}")
 
-    # ── Paso 6: Resumen del ciclo ──────────────────────────────────────────────
+    # ── Paso 5: Resumen del ciclo ──────────────────────────────────────────────
     print("\n--- Resumen del ciclo ---")
     print(f"  Correos procesados : {len(classified_emails)}")
-    print(f"  Eventos creados    : {events_created}")
+    print(f"  Reuniones detectadas para agendar manualmente: "
+          f"{sum(1 for e in classified_emails if e.get('category') == 'reunion')}")
     print(f"{'='*50}\n")
 
 

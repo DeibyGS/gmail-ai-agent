@@ -11,19 +11,29 @@ export const LABEL_OPTIONS: EventMeta[] = [
   { label: 'otro',      color: '#6B7280' },
 ];
 
+interface InitialData {
+  title?:       string;
+  time?:        string;
+  location?:    string;
+  description?: string;
+}
+
 interface Props {
-  initialDate?: string;  // YYYY-MM-DD
+  initialDate?: string;   // YYYY-MM-DD
+  initialData?: InitialData;
   onConfirm: (payload: CreateEventPayload, meta: EventMeta) => void;
   onClose: () => void;
 }
 
-export default function EventCreateModal({ initialDate = '', onConfirm, onClose }: Props) {
-  const [title, setTitle]             = useState('');
+export default function EventCreateModal({ initialDate = '', initialData, onConfirm, onClose }: Props) {
+  const [title, setTitle]             = useState(initialData?.title       ?? '');
   const [date, setDate]               = useState(initialDate);
-  const [time, setTime]               = useState('');
-  const [location, setLocation]       = useState('');
-  const [description, setDesc]        = useState('');
-  const [selectedLabel, setLabel]     = useState<EventMeta>(LABEL_OPTIONS[0]);
+  const [time, setTime]               = useState(initialData?.time        ?? '');
+  const [location, setLocation]       = useState(initialData?.location    ?? '');
+  const [description, setDesc]        = useState(initialData?.description ?? '');
+  const [selectedLabel, setLabel]     = useState<EventMeta>(
+    initialData ? (LABEL_OPTIONS.find(o => o.label === 'reunion') ?? LABEL_OPTIONS[0]) : LABEL_OPTIONS[0]
+  );
   const [customColor, setCustomColor] = useState('');
   const [saving, setSaving]           = useState(false);
   const [error, setError]             = useState('');
