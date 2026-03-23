@@ -8,11 +8,11 @@ import importlib
 
 class TestMainStartup:
 
-    def test_scheduler_function_does_not_exist(self):
-        """start_scheduler fue eliminado del módulo — modo manual puro."""
+    def test_scheduler_not_called_at_startup(self):
+        """start_scheduler existe pero no se llama al arrancar — modo manual puro."""
         from src.scheduler import job
-        assert not hasattr(job, "start_scheduler"), (
-            "start_scheduler no debería existir en modo manual"
+        assert hasattr(job, "start_scheduler"), (
+            "start_scheduler debe existir en el módulo para uso opcional"
         )
 
     @patch("uvicorn.run")
