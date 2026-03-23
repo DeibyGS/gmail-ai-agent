@@ -7,12 +7,14 @@ Endpoints de emails y stats:
 - GET  /api/emails                → correos no leídos clasificados y resumidos
 - GET  /api/emails/stats          → estadísticas en tiempo real (no leídos)
 - GET  /api/emails/processed      → correos procesados (today | history)
+- GET  /api/emails/search         → búsqueda full-text FTS5 en el historial
 - GET  /api/stats/categories      → distribución histórica por categoría (SQLite)
 - GET  /api/stats/daily           → volumen diario últimos 30 días (SQLite)
 - GET  /api/stats/senders         → top 10 remitentes (SQLite)
 - POST /api/process               → forzar ciclo de procesamiento inmediato
 
 Endpoints de calendario → ver src/api/calendar_router.py
+Endpoint de briefing   → ver src/api/briefing_router.py
 """
 
 from datetime import datetime
@@ -28,10 +30,11 @@ from src.scheduler.job import run_processing_cycle
 from src.database.init_db import get_db, init_db
 from src.database.repository import (
     get_stats_by_category, get_daily_volume, get_top_senders,
-    get_processed_today, get_processed_history,
+    get_processed_today, get_processed_history, search_emails_fts,
 )
 from src.api.calendar_router import router as calendar_router
 from src.api.config_router import router as config_router
+from src.api.briefing_router import router as briefing_router
 
 
 # ── Inicialización de la app FastAPI ──────────────────────────────────────────
@@ -61,6 +64,7 @@ app.add_middleware(
 # Montar routers
 app.include_router(calendar_router)
 app.include_router(config_router)
+app.include_router(briefing_router)
 
 
 # ── Endpoints de correos ───────────────────────────────────────────────────────
@@ -162,6 +166,35 @@ def get_processed_emails(
         "total": len(emails),
         "view": view,
         "fetched_at": datetime.now().isoformat(),
+    }
+
+
+# ── Endpoint de búsqueda full-text (FTS5) ─────────────────────────────────────
+
+@app.get("/api/emails/search")
+def search_emails(
+    q: str = Query(..., min_length=1, description="Texto a buscar en asunto, remitente y resumen"),
+    category: Optional[str] = Query(None, description="Filtrar por categoría"),
+    since: Optional[str] = Query(None, description="Fecha mínima YYYY-MM-DD"),
+    until: Optional[str] = Query(None, description="Fecha máxima YYYY-MM-DD"),
+) -> dict:
+    """
+    Busca correos en el historial usando FTS5 (full-text search).
+
+    Busca simultáneamente en subject, sender y summary.
+    Se puede combinar con filtros de categoría y rango de fechas.
+    """
+    db = get_db()
+    try:
+        emails = search_emails_fts(db, q=q, category=category, since=since, until=until)
+    finally:
+        db.close()
+
+    return {
+        "emails":      emails,
+        "total":       len(emails),
+        "query":       q,
+        "fetched_at":  datetime.now().isoformat(),
     }
 
 

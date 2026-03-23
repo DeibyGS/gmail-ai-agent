@@ -7,6 +7,7 @@ Los demás módulos llaman estas funciones en lugar de escribir SQL directamente
 
 from datetime import datetime, date
 from collections import defaultdict
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 from src.database.models import ProcessedEmail
 
@@ -42,6 +43,19 @@ def save_emails(db: Session, emails: list[dict]) -> int:
             day          = today,
         )
         db.add(record)
+        # flush para obtener el id autoincremental antes del commit
+        db.flush()
+        # insertar en FTS5 para que sea buscable inmediatamente
+        db.execute(text("""
+            INSERT INTO emails_fts(rowid, email_id, subject, sender, summary)
+            VALUES (:rowid, :email_id, :subject, :sender, :summary)
+        """), {
+            "rowid":    record.id,
+            "email_id": record.email_id,
+            "subject":  record.subject,
+            "sender":   record.sender,
+            "summary":  record.summary,
+        })
         saved += 1
 
     db.commit()
@@ -165,6 +179,56 @@ def get_processed_history(
         query = query.filter(ProcessedEmail.category == category)
 
     emails = query.limit(limit).all()
+    return [_email_to_dict(e) for e in emails]
+
+
+def search_emails_fts(
+    db: Session,
+    q: str,
+    category: str | None = None,
+    since: str | None = None,
+    until: str | None = None,
+    limit: int = 100,
+) -> list[dict]:
+    """
+    Busca correos usando FTS5 (full-text search) sobre subject, sender y summary.
+
+    q:        término o frase a buscar (soporta operadores FTS5 como AND, OR, NOT)
+    category: filtrar por categoría adicional
+    since:    solo correos desde esta fecha YYYY-MM-DD
+    until:    solo correos hasta esta fecha YYYY-MM-DD
+    limit:    máximo de resultados (defecto 100)
+
+    Devuelve la lista de correos que coinciden, enriquecidos con bm25_score.
+    """
+    try:
+        # FTS5 MATCH devuelve los rowids que coinciden con el término buscado
+        # bm25() es la función de ranking de relevancia de FTS5
+        rows = db.execute(text("""
+            SELECT rowid
+            FROM emails_fts
+            WHERE emails_fts MATCH :q
+            ORDER BY bm25(emails_fts)
+        """), {"q": q}).fetchall()
+    except Exception:
+        # Si el usuario escribe una query FTS5 inválida (ej: "AND"), devolvemos vacío
+        return []
+
+    if not rows:
+        return []
+
+    matching_ids = [row[0] for row in rows]
+
+    # Buscar en la tabla principal usando los rowids del índice FTS5
+    query = db.query(ProcessedEmail).filter(ProcessedEmail.id.in_(matching_ids))
+    if category:
+        query = query.filter(ProcessedEmail.category == category)
+    if since:
+        query = query.filter(ProcessedEmail.day >= since)
+    if until:
+        query = query.filter(ProcessedEmail.day <= until)
+
+    emails = query.order_by(ProcessedEmail.processed_at.desc()).limit(limit).all()
     return [_email_to_dict(e) for e in emails]
 
 

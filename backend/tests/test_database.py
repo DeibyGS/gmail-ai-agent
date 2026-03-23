@@ -6,7 +6,7 @@ independientes y no dejen archivos en disco.
 """
 
 import pytest
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker, Session
 
 from src.database.models import Base
@@ -24,9 +24,25 @@ from src.database.repository import (
 
 @pytest.fixture
 def db() -> Session:
-    """Crea una base de datos SQLite en memoria limpia para cada test."""
+    """Crea una base de datos SQLite en memoria limpia para cada test.
+
+    Incluye la tabla virtual FTS5 'emails_fts' que save_emails() necesita
+    para indexar los correos en tiempo real.
+    """
     engine = create_engine("sqlite:///:memory:", connect_args={"check_same_thread": False})
     Base.metadata.create_all(bind=engine)
+    # Crear tabla FTS5 (no es un modelo SQLAlchemy, requiere SQL crudo)
+    with engine.connect() as conn:
+        conn.execute(text("""
+            CREATE VIRTUAL TABLE IF NOT EXISTS emails_fts USING fts5(
+                email_id UNINDEXED,
+                subject,
+                sender,
+                summary,
+                tokenize='unicode61'
+            )
+        """))
+        conn.commit()
     SessionLocal = sessionmaker(bind=engine)
     session = SessionLocal()
     yield session

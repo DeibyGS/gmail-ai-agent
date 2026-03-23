@@ -43,7 +43,9 @@ crea eventos en Google Calendar para reuniones, y expone todo a través de un da
 - **Filtro por fecha**: solo procesa correos llegados después de `GMAIL_FILTER_AFTER_DATE` (por defecto `2026/03/20`)
 - **Límite configurable**: hasta 100 correos por ciclo (`MAX_EMAILS_PER_RUN`)
 - **Historial SQLite**: todos los correos procesados se guardan localmente con categoría, resumen y timestamp
-- **Dashboard de correos** con 3 pestañas: Pendientes · Procesados hoy · Historial filtrable
+- **Briefing diario** (`/briefing`): resumen ejecutivo narrativo generado por Gemini. Cards estructuradas con resumen general, correos urgentes (acción requerida), reuniones pendientes de agendar y recomendaciones del agente. Soporta consultar el briefing de cualquier fecha pasada.
+- **Búsqueda inteligente en historial**: campo de texto libre que usa SQLite FTS5 (full-text search) para buscar simultáneamente en asunto, remitente y resumen. Se combina con los filtros de fecha y categoría existentes. Los términos encontrados se resaltan en amarillo en los resultados.
+- **Dashboard de correos** con 3 pestañas: Pendientes · Procesados hoy · Historial filtrable + buscable
 - **Dashboard de estadísticas**: donut por categoría · barras+línea de volumen diario · top remitentes
 - **Calendario interactivo**: dos pestañas (lista de cards + grid mes/semana/día) · crear · editar · eliminar eventos · acciones inline en cards · etiquetas con color
 - **Script de arranque**: `emaildgs` inicia backend + frontend y abre el navegador automáticamente
