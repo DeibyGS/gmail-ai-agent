@@ -9,7 +9,10 @@ import { theme, btnStyles } from '../theme';
 
 type Tab = 'pending' | 'today' | 'history';
 
-const CATEGORIES: EmailCategory[] = ['reunion', 'urgente', 'informativo', 'promocion', 'otro'];
+const CATEGORIES: EmailCategory[] = [
+  'reunion', 'urgente', 'recordatorio', 'factura',
+  'soporte', 'notificacion', 'personal', 'promocion', 'informativo', 'otro',
+];
 
 export default function EmailsPage() {
   const [activeTab, setActiveTab]           = useState<Tab>('pending');
@@ -21,7 +24,12 @@ export default function EmailsPage() {
   const [loading, setLoading]               = useState(false);
   const [processing, setProcessing]         = useState(false);
   const [error, setError]                   = useState<string | null>(null);
-  const [schedulingEmail, setSchedulingEmail] = useState<Email | null>(null);
+  const [schedulingEmail, setSchedulingEmail]   = useState<Email | null>(null);
+  const [categoryOverrides, setCategoryOverrides] = useState<Record<string, EmailCategory>>({});
+  const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
+
+  const effectiveCategory = (email: Email): EmailCategory =>
+    categoryOverrides[email.id] ?? email.category;
 
   // Carga pendientes o procesados hoy
   const loadTab = useCallback(async (tab: Exclude<Tab, 'history'>) => {
@@ -162,22 +170,50 @@ export default function EmailsPage() {
           {loading && <Spinner label="Cargando correos pendientes..." />}
           {!loading && pending.length === 0 && <EmptyInboxCard />}
           <div style={styles.list}>
-            {pending.map(email => (
-              <div key={email.id}>
-                <EmailCard email={email} />
-                {email.category === 'reunion' && (
-                  <div style={styles.scheduleRow}>
-                    <button
-                      className="btn-primary"
-                      style={{ ...btnStyles.primary, fontSize: '0.8rem', padding: '0.3rem 0.9rem' }}
-                      onClick={() => setSchedulingEmail(email)}
-                    >
-                      📅 Agendar
-                    </button>
+            {pending.map(email => {
+              const category = effectiveCategory(email);
+              const isEditing = editingCategoryId === email.id;
+              return (
+                <div key={email.id}>
+                  <EmailCard email={{ ...email, category }} />
+                  <div style={styles.cardActions}>
+                    {/* ── Cambiar tipo ──────────────────────────── */}
+                    {isEditing ? (
+                      <select
+                        autoFocus
+                        value={category}
+                        style={styles.categorySelect}
+                        onChange={e => {
+                          setCategoryOverrides(prev => ({ ...prev, [email.id]: e.target.value }));
+                          setEditingCategoryId(null);
+                        }}
+                        onBlur={() => setEditingCategoryId(null)}
+                      >
+                        {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                      </select>
+                    ) : (
+                      <button
+                        style={styles.editCategoryBtn}
+                        onClick={() => setEditingCategoryId(email.id)}
+                        title="Cambiar clasificación"
+                      >
+                        ✏️ Cambiar tipo
+                      </button>
+                    )}
+                    {/* ── Agendar (solo si es reunion) ──────────── */}
+                    {category === 'reunion' && !isEditing && (
+                      <button
+                        className="btn-primary"
+                        style={{ ...btnStyles.primary, fontSize: '0.8rem', padding: '0.3rem 0.9rem' }}
+                        onClick={() => setSchedulingEmail({ ...email, category })}
+                      >
+                        📅 Agendar
+                      </button>
+                    )}
                   </div>
-                )}
-              </div>
-            ))}
+                </div>
+              );
+            })}
           </div>
         </>
       )}
@@ -407,7 +443,27 @@ const styles: Record<string, React.CSSProperties> = {
     fontFamily: theme.fonts.body,
   },
   list:        { display: 'flex', flexDirection: 'column', gap: '0.75rem' },
-  scheduleRow: { display: 'flex', justifyContent: 'flex-end', marginTop: '0.35rem' },
+  cardActions: { display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '0.5rem', marginTop: '0.35rem' },
+  editCategoryBtn: {
+    background: 'none',
+    border: `1px solid ${theme.colors.border}`,
+    borderRadius: theme.radius.sm,
+    color: theme.colors.textMuted,
+    fontFamily: theme.fonts.body,
+    fontSize: '0.78rem',
+    padding: '0.25rem 0.65rem',
+    cursor: 'pointer',
+  },
+  categorySelect: {
+    background: theme.colors.surface,
+    border: `1px solid ${theme.colors.gradientStart}`,
+    borderRadius: theme.radius.sm,
+    color: theme.colors.textPrimary,
+    fontFamily: theme.fonts.body,
+    fontSize: '0.82rem',
+    padding: '0.25rem 0.5rem',
+    cursor: 'pointer',
+  },
   info:  { color: theme.colors.textMuted, fontFamily: theme.fonts.body, fontSize: '0.9rem' },
   error: { color: theme.colors.danger,   fontFamily: theme.fonts.body, fontSize: '0.9rem' },
 };
