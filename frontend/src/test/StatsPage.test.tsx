@@ -1,6 +1,7 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import { vi } from 'vitest';
 import StatsPage from '../pages/StatsPage';
+import type { DailyStats } from '../types';
 
 // Mock de recharts — jsdom no soporta SVG/canvas; reemplazamos con divs simples
 vi.mock('recharts', () => ({
@@ -38,7 +39,7 @@ const mockCategoryStats = {
   fetched_at: '2026-03-23T12:00:00',
 };
 
-const mockDailyStats = {
+const mockDailyStats: DailyStats = {
   daily: [
     { day: '2026-03-20', total: 5, by_category: { reunion: 2, urgente: 3 } },
     { day: '2026-03-21', total: 3, by_category: { informativo: 3 } },
