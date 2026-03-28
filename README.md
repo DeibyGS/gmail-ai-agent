@@ -62,10 +62,12 @@ crea eventos en Google Calendar para reuniones, y expone todo a través de un da
 ## Instalación y uso
 
 ### Requisitos previos
+
 - Python 3.11+
 - Node.js 18+
-- Credenciales de Google Cloud (Gmail API + Calendar API habilitadas)
-- API Key de Google Gemini
+- Una cuenta de Google con Gmail habilitado
+- [API Key de Google Gemini](https://aistudio.google.com/app/apikey) (gratuita)
+- Un proyecto en [Google Cloud Console](https://console.cloud.google.com/) con **Gmail API** y **Google Calendar API** habilitadas
 
 ### 1. Clonar el repositorio
 
@@ -74,30 +76,39 @@ git clone https://github.com/DeibyGS/email-agent.git
 cd email-agent
 ```
 
-### 2. Configurar el backend
+### 2. Configurar credenciales de Google OAuth2
+
+1. Ve a [Google Cloud Console](https://console.cloud.google.com/) → **APIs y servicios** → **Credenciales**
+2. Crea unas credenciales de tipo **OAuth 2.0 (aplicación de escritorio)**
+3. Descarga el archivo JSON y renómbralo como `credentials.json`
+4. Colócalo en `backend/credentials.json`
+
+> El archivo `token.json` se genera automáticamente la primera vez que arranques el proyecto — el navegador se abrirá para que autorices el acceso a tu cuenta de Google.
+
+### 3. Configurar variables de entorno
 
 ```bash
+cd backend
+cp .env.example .env
+```
+
+Edita `backend/.env` y completa al menos `GEMINI_API_KEY` con tu clave de Gemini. El resto de variables tiene valores por defecto funcionales.
+
+### 4. Instalar dependencias
+
+```bash
+# Backend
 cd backend
 python -m venv .venv
 source .venv/bin/activate        # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
-```
 
-Copiar el archivo de ejemplo y completar las variables:
-
-```bash
-cp .env.example .env
-# Editar .env con tu API key de Gemini y configuración de Google OAuth2
-```
-
-### 3. Configurar el frontend
-
-```bash
-cd frontend
+# Frontend
+cd ../frontend
 npm install
 ```
 
-### 4. Arrancar el proyecto
+### 5. Arrancar el proyecto
 
 Desde la raíz del proyecto:
 
@@ -106,6 +117,12 @@ Desde la raíz del proyecto:
 ```
 
 Esto inicia el backend (puerto 8000), el frontend (puerto 5173) y abre el navegador automáticamente.
+
+Para usar `email-agent` desde cualquier directorio, crea un symlink global:
+
+```bash
+sudo ln -sf $(pwd)/email-agent /usr/local/bin/email-agent
+```
 
 Para detener: `Ctrl+C`
 
