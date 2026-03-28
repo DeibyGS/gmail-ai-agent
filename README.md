@@ -1,4 +1,4 @@
-# Gmail AI Agent
+# Email Agent
 
 <!-- AUTO-GENERATED -->
 Agente de IA que procesa emails de Gmail, los clasifica automáticamente usando Google Gemini,
@@ -48,7 +48,7 @@ crea eventos en Google Calendar para reuniones, y expone todo a través de un da
 - **Dashboard de correos** con 3 pestañas: Pendientes · Procesados hoy · Historial filtrable + buscable
 - **Dashboard de estadísticas**: donut por categoría · barras+línea de volumen diario · top remitentes
 - **Calendario interactivo**: dos pestañas (lista de cards + grid mes/semana/día) · crear · editar · eliminar eventos · acciones inline en cards · etiquetas con color
-- **Script de arranque**: `emaildgs` inicia backend + frontend y abre el navegador automáticamente
+- **Script de arranque**: `email-agent` inicia backend + frontend y abre el navegador automáticamente
 - **UI "AI Futuristic Glow"**: dark theme con fondo `#0B0F19`, glassmorphism en navbar, glow en botones IA, animación "AI thinking..." al procesar, overrides de react-big-calendar para dark mode
 - **Hover effects profesionales**: glow pulsante en botones primarios, borde iluminado en secundarios, glow rojo en danger
 - **Empty state glassmorphism**: bandeja vacía con card animada en lugar de texto plano
@@ -102,7 +102,7 @@ npm install
 Desde la raíz del proyecto:
 
 ```bash
-./emaildgs
+./email-agent
 ```
 
 Esto inicia el backend (puerto 8000), el frontend (puerto 5173) y abre el navegador automáticamente.
@@ -194,8 +194,7 @@ email-agent/
 ├── docs/API.md                     # Referencia completa de la API REST
 ├── docker-compose.yml              # Orquestación backend + frontend
 ├── .github/workflows/ci.yml        # CI: pytest · ruff · vitest · docker build
-├── emaildgs                        # Script de arranque rápido (local)
-└── HANDOFF.md                      # Estado del proyecto entre sesiones
+└── email-agent                     # Script de arranque rápido (local)
 ```
 <!-- /AUTO-GENERATED -->
 
