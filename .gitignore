@@ -47,3 +47,11 @@ Thumbs.db
 .vscode/settings.json
 .idea/
 *.swp
+
+# ========================
+# ARCHIVOS DE GESTIÓN PERSONAL
+# ========================
+HANDOFF.md
+PROJECT_SUMMARY.md
+summary-*.md
+linkedin_post.md

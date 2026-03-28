@@ -70,8 +70,8 @@ crea eventos en Google Calendar para reuniones, y expone todo a través de un da
 ### 1. Clonar el repositorio
 
 ```bash
-git clone https://github.com/DeibyGS/gmail-ai-agent.git
-cd gmail-ai-agent
+git clone https://github.com/DeibyGS/email-agent.git
+cd email-agent
 ```
 
 ### 2. Configurar el backend
@@ -167,7 +167,7 @@ Las credenciales OAuth2 de Google se guardan en `backend/credentials.json` y `ba
 ## Estructura del proyecto
 
 ```
-gmail-ai-agent/
+email-agent/
 ├── backend/
 │   ├── config/settings.py          # Variables de entorno y credenciales
 │   ├── src/
