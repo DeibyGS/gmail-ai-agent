@@ -1,100 +1,92 @@
 # Email Agent
 
-<!-- AUTO-GENERATED -->
-Agente de IA que procesa emails de Gmail, los clasifica automáticamente usando Google Gemini,
-crea eventos en Google Calendar para reuniones, y expone todo a través de un dashboard web en React.
-<!-- /AUTO-GENERATED -->
+AI agent that processes Gmail emails, classifies them automatically using Google Gemini,
+creates Google Calendar events for meetings, and exposes everything through a React web dashboard.
 
 ---
 
-<!-- AUTO-GENERATED -->
-## Stack tecnológico
+## Tech Stack
 
 ### Backend
 - Python 3.11+ · FastAPI · uvicorn
-- Google Gemini API (`google-genai`) — clasificación y resumen de correos
+- Google Gemini API (`google-genai`) — email classification and summarization
 - Gmail API + Google Calendar API (OAuth2)
-- SQLite + SQLAlchemy — historial local de correos procesados
+- SQLite + SQLAlchemy — local history of processed emails
 - pytest · httpx — testing
 
 ### Frontend
 - React 18 + TypeScript · Vite
-- react-big-calendar + date-fns — calendario interactivo
-- Recharts — gráficos de estadísticas (donut, barras, línea)
-- Axios — comunicación con el backend
-- Vitest + React Testing Library + @vitest/coverage-v8 — tests de componentes
-- **Design system centralizado** (`src/theme.ts`) — paleta AI Futuristic Glow con dark theme, glassmorphism y animaciones
+- react-big-calendar + date-fns — interactive calendar
+- Recharts — statistics charts (donut, bar, line)
+- Axios — backend communication
+- Vitest + React Testing Library + @vitest/coverage-v8 — component tests
+- **Centralized design system** (`src/theme.ts`) — AI Futuristic Glow palette with dark theme, glassmorphism, and animations
 - Google Fonts: Space Grotesk (headings) · Inter (body) · IBM Plex Mono (AI outputs)
-- **Sonner** — toast notifications (crear/editar/eliminar eventos)
+- **Sonner** — toast notifications (create/edit/delete events)
 
 ### Deploy
 - Docker + GitHub Actions (CI/CD)
-<!-- /AUTO-GENERATED -->
 
 ---
 
-<!-- AUTO-GENERATED -->
-## Features implementadas
+## Features
 
-- **Procesamiento manual de correos**: botón "Procesar ahora" en el dashboard
-- **Clasificación IA**: Gemini clasifica cada correo con categoría (reunion, urgente, promocion, informativo, otro) y genera un resumen
-- **Agendado manual de reuniones**: correos clasificados como `reunion` muestran un botón "📅 Agendar" que abre un modal pre-llenado con los datos extraídos por Gemini (título, fecha, hora, ubicación, descripción). El usuario revisa y confirma antes de crear el evento. Si el email incluye un adjunto `.ics`, los datos se extraen directamente del archivo con mayor precisión.
-- **Panel de configuración** (`/settings`): ajusta `MAX_EMAILS_PER_RUN`, `CHECK_INTERVAL_MINUTES`, `GMAIL_FILTER_AFTER_DATE` y horario de descanso (`QUIET_HOURS_START`/`END`) desde el dashboard. Los cambios se persisten en `.env` y se aplican sin reiniciar.
-- **Filtro por fecha**: solo procesa correos llegados después de `GMAIL_FILTER_AFTER_DATE` (por defecto `2026/03/20`)
-- **Límite configurable**: hasta 100 correos por ciclo (`MAX_EMAILS_PER_RUN`)
-- **Historial SQLite**: todos los correos procesados se guardan localmente con categoría, resumen y timestamp
-- **Briefing diario** (`/briefing`): resumen ejecutivo narrativo generado por Gemini. Cards estructuradas con resumen general, correos urgentes (acción requerida), reuniones pendientes de agendar y recomendaciones del agente. Soporta consultar el briefing de cualquier fecha pasada.
-- **Búsqueda inteligente en historial**: campo de texto libre que usa SQLite FTS5 (full-text search) para buscar simultáneamente en asunto, remitente y resumen. Se combina con los filtros de fecha y categoría existentes. Los términos encontrados se resaltan en amarillo en los resultados.
-- **Dashboard de correos** con 3 pestañas: Pendientes · Procesados hoy · Historial filtrable + buscable
-- **Dashboard de estadísticas**: donut por categoría · barras+línea de volumen diario · top remitentes
-- **Calendario interactivo**: dos pestañas (lista de cards + grid mes/semana/día) · crear · editar · eliminar eventos · acciones inline en cards · etiquetas con color
-- **Script de arranque**: `email-agent` inicia backend + frontend y abre el navegador automáticamente
-- **UI "AI Futuristic Glow"**: dark theme con fondo `#0B0F19`, glassmorphism en navbar, glow en botones IA, animación "AI thinking..." al procesar, overrides de react-big-calendar para dark mode
-- **Hover effects profesionales**: glow pulsante en botones primarios, borde iluminado en secundarios, glow rojo en danger
-- **Empty state glassmorphism**: bandeja vacía con card animada en lugar de texto plano
-- **Toast notifications**: feedback visual al crear, editar y eliminar eventos del calendario
-- **Fix bug NaN**: eventos de calendario recién creados ya muestran fecha correcta (normalización de respuesta de Google Calendar API)
-<!-- /AUTO-GENERATED -->
+- **Manual email processing**: "Process now" button in the dashboard
+- **AI classification**: Gemini classifies each email with a category (meeting, urgent, promotion, informational, other) and generates a summary
+- **Manual meeting scheduling**: emails classified as `meeting` show a "📅 Schedule" button that opens a pre-filled modal with Gemini-extracted data (title, date, time, location, description). The user reviews and confirms before creating the event. If the email includes an `.ics` attachment, data is extracted directly from the file with greater precision.
+- **Settings panel** (`/settings`): adjust `MAX_EMAILS_PER_RUN`, `CHECK_INTERVAL_MINUTES`, `GMAIL_FILTER_AFTER_DATE`, and quiet hours (`QUIET_HOURS_START`/`END`) from the dashboard. Changes persist in `.env` and apply without restart.
+- **Date filter**: only processes emails received after `GMAIL_FILTER_AFTER_DATE` (default `2026/03/20`)
+- **Configurable limit**: up to 100 emails per cycle (`MAX_EMAILS_PER_RUN`)
+- **SQLite history**: all processed emails are stored locally with category, summary, and timestamp
+- **Daily briefing** (`/briefing`): executive narrative summary generated by Gemini. Structured cards with general overview, urgent emails (action required), meetings pending scheduling, and agent recommendations. Supports querying briefings from any past date.
+- **Smart history search**: free-text field using SQLite FTS5 (full-text search) to search simultaneously across subject, sender, and summary. Combines with existing date and category filters. Found terms are highlighted in yellow.
+- **Email dashboard** with 3 tabs: Pending · Processed today · Filterable + searchable history
+- **Statistics dashboard**: category donut chart · daily volume bars + line · top senders
+- **Interactive calendar**: two tabs (card list + month/week/day grid) · create · edit · delete events · inline card actions · color-coded labels
+- **Startup script**: `email-agent` launches backend + frontend and opens the browser automatically
+- **"AI Futuristic Glow" UI**: dark theme with `#0B0F19` background, glassmorphism navbar, glow on AI buttons, "AI thinking..." animation during processing, react-big-calendar dark mode overrides
+- **Professional hover effects**: pulsing glow on primary buttons, illuminated border on secondary, red glow on danger
+- **Glassmorphism empty state**: animated card instead of plain text when inbox is empty
+- **Toast notifications**: visual feedback when creating, editing, and deleting calendar events
 
 ---
 
-<!-- AUTO-GENERATED -->
-## Instalación y uso
+## Installation & Usage
 
-### Requisitos previos
+### Prerequisites
 
 - Python 3.11+
 - Node.js 18+
-- Una cuenta de Google con Gmail habilitado
-- [API Key de Google Gemini](https://aistudio.google.com/app/apikey) (gratuita)
-- Un proyecto en [Google Cloud Console](https://console.cloud.google.com/) con **Gmail API** y **Google Calendar API** habilitadas
+- A Google account with Gmail enabled
+- [Google Gemini API Key](https://aistudio.google.com/app/apikey) (free)
+- A project in [Google Cloud Console](https://console.cloud.google.com/) with **Gmail API** and **Google Calendar API** enabled
 
-### 1. Clonar el repositorio
+### 1. Clone the repository
 
 ```bash
-git clone https://github.com/DeibyGS/email-agent.git
-cd email-agent
+git clone https://github.com/DeibyGS/gmail-ai-agent.git
+cd gmail-ai-agent
 ```
 
-### 2. Configurar credenciales de Google OAuth2
+### 2. Configure Google OAuth2 credentials
 
-1. Ve a [Google Cloud Console](https://console.cloud.google.com/) → **APIs y servicios** → **Credenciales**
-2. Crea unas credenciales de tipo **OAuth 2.0 (aplicación de escritorio)**
-3. Descarga el archivo JSON y renómbralo como `credentials.json`
-4. Colócalo en `backend/credentials.json`
+1. Go to [Google Cloud Console](https://console.cloud.google.com/) → **APIs & Services** → **Credentials**
+2. Create **OAuth 2.0 (Desktop application)** credentials
+3. Download the JSON file and rename it to `credentials.json`
+4. Place it in `backend/credentials.json`
 
-> El archivo `token.json` se genera automáticamente la primera vez que arranques el proyecto — el navegador se abrirá para que autorices el acceso a tu cuenta de Google.
+> The `token.json` file is generated automatically the first time you start the project — the browser will open for you to authorize access to your Google account.
 
-### 3. Configurar variables de entorno
+### 3. Configure environment variables
 
 ```bash
 cd backend
 cp .env.example .env
 ```
 
-Edita `backend/.env` y completa al menos `GEMINI_API_KEY` con tu clave de Gemini. El resto de variables tiene valores por defecto funcionales.
+Edit `backend/.env` and fill in at least `GEMINI_API_KEY` with your Gemini key. The rest of the variables have functional default values.
 
-### 4. Instalar dependencias
+### 4. Install dependencies
 
 ```bash
 # Backend
@@ -108,25 +100,25 @@ cd ../frontend
 npm install
 ```
 
-### 5. Arrancar el proyecto
+### 5. Start the project
 
-Desde la raíz del proyecto:
+From the project root:
 
 ```bash
 ./email-agent
 ```
 
-Esto inicia el backend (puerto 8000), el frontend (puerto 5173) y abre el navegador automáticamente.
+This starts the backend (port 8000), the frontend (port 5173), and opens the browser automatically.
 
-Para usar `email-agent` desde cualquier directorio, crea un symlink global:
+To use `email-agent` from any directory, create a global symlink:
 
 ```bash
 sudo ln -sf $(pwd)/email-agent /usr/local/bin/email-agent
 ```
 
-Para detener: `Ctrl+C`
+To stop: `Ctrl+C`
 
-### Arranque manual
+### Manual startup
 
 ```bash
 # Terminal 1 — Backend
@@ -136,14 +128,14 @@ cd backend && source .venv/bin/activate && python main.py
 cd frontend && npm run dev
 ```
 
-### Arranque con Docker
+### Docker startup
 
 ```bash
-# Requisito: tener backend/credentials.json y backend/token.json generados (OAuth2)
+# Requirement: have backend/credentials.json and backend/token.json generated (OAuth2)
 docker-compose up --build
 ```
 
-Servicios disponibles:
+Available services:
 - Backend: `http://localhost:8000`
 - Frontend: `http://localhost:3000`
 
@@ -154,73 +146,66 @@ Servicios disponibles:
 cd backend && source .venv/bin/activate && pytest tests/ --ignore=tests/test_scheduler.py -v
 
 # Frontend
-cd frontend && npm test              # modo watch
-cd frontend && npm run test:coverage # con reporte de cobertura
+cd frontend && npm test              # watch mode
+cd frontend && npm run test:coverage # with coverage report
 ```
-<!-- /AUTO-GENERATED -->
 
 ---
 
-<!-- AUTO-GENERATED -->
-## Variables de entorno
+## Environment Variables
 
-Copiar `backend/.env.example` a `backend/.env` y completar:
+Copy `backend/.env.example` to `backend/.env` and fill in:
 
-| Variable | Descripción | Ejemplo |
+| Variable | Description | Example |
 |----------|-------------|---------|
-| `GEMINI_API_KEY` | API Key de Google Gemini | `AIza...` |
-| `GMAIL_FILTER_AFTER_DATE` | Solo procesar correos después de esta fecha | `2026/03/20` |
-| `MAX_EMAILS_PER_RUN` | Máximo de correos por ciclo | `100` |
-| `CHECK_INTERVAL_MINUTES` | Intervalo del scheduler automático | `30` |
-| `QUIET_HOURS_START` | Hora de inicio del descanso (0–23) | `0` |
-| `QUIET_HOURS_END` | Hora de fin del descanso (0–24) | `8` |
+| `GEMINI_API_KEY` | Google Gemini API Key | `AIza...` |
+| `GMAIL_FILTER_AFTER_DATE` | Only process emails after this date | `2026/03/20` |
+| `MAX_EMAILS_PER_RUN` | Maximum emails per cycle | `100` |
+| `CHECK_INTERVAL_MINUTES` | Automatic scheduler interval | `30` |
+| `QUIET_HOURS_START` | Quiet hours start (0–23) | `0` |
+| `QUIET_HOURS_END` | Quiet hours end (0–24) | `8` |
 
-Las credenciales OAuth2 de Google se guardan en `backend/credentials.json` y `backend/token.json` (no se suben al repositorio).
-<!-- /AUTO-GENERATED -->
+Google OAuth2 credentials are stored in `backend/credentials.json` and `backend/token.json` (not uploaded to the repository).
 
 ---
 
-<!-- AUTO-GENERATED -->
-## Estructura del proyecto
+## Project Structure
 
 ```
-email-agent/
+gmail-ai-agent/
 ├── backend/
-│   ├── config/settings.py          # Variables de entorno y credenciales
+│   ├── config/settings.py          # Environment variables and credentials
 │   ├── src/
-│   │   ├── gmail/client.py         # Cliente Gmail API
-│   │   ├── ai/classifier.py        # Clasificador Gemini
-│   │   ├── calendar/client.py      # Cliente Calendar API
-│   │   ├── scheduler/job.py        # Pipeline de procesamiento
+│   │   ├── gmail/client.py         # Gmail API client
+│   │   ├── ai/classifier.py        # Gemini classifier
+│   │   ├── calendar/client.py      # Calendar API client
+│   │   ├── scheduler/job.py        # Processing pipeline
 │   │   ├── database/
-│   │   │   ├── models.py           # Modelos SQLAlchemy
-│   │   │   ├── repository.py       # Acceso a datos
-│   │   │   └── init_db.py          # Inicialización SQLite
+│   │   │   ├── models.py           # SQLAlchemy models
+│   │   │   ├── repository.py       # Data access
+│   │   │   └── init_db.py          # SQLite initialization
 │   │   └── api/
-│   │       ├── routes.py           # Endpoints principales
-│   │       └── calendar_router.py  # Endpoints de calendario
+│   │       ├── routes.py           # Main endpoints
+│   │       └── calendar_router.py  # Calendar endpoints
 │   ├── tests/
 │   ├── main.py
 │   └── requirements.txt
 ├── frontend/
 │   └── src/
-│       ├── components/             # Navbar, EmailCard, modales
+│       ├── components/             # Navbar, EmailCard, modals
 │       ├── pages/                  # EmailsPage · StatsPage · CalendarPage
-│       ├── services/api.ts         # Llamadas al backend
-│       └── types/index.ts          # Interfaces TypeScript
-├── docs/API.md                     # Referencia completa de la API REST
-├── docker-compose.yml              # Orquestación backend + frontend
+│       ├── services/api.ts         # Backend API calls
+│       └── types/index.ts          # TypeScript interfaces
+├── docs/API.md                     # Full REST API reference
+├── docker-compose.yml              # Backend + frontend orchestration
 ├── .github/workflows/ci.yml        # CI: pytest · ruff · vitest · docker build
-└── email-agent                     # Script de arranque rápido (local)
+└── email-agent                     # Quick start script (local)
 ```
-<!-- /AUTO-GENERATED -->
 
 ---
 
-<!-- AUTO-GENERATED -->
 ## API
 
-Ver referencia completa en [`docs/API.md`](docs/API.md).
+See full reference in [`docs/API.md`](docs/API.md).
 
-Base URL local: `http://localhost:8000`
-<!-- /AUTO-GENERATED -->
+Local base URL: `http://localhost:8000`
