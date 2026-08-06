@@ -3,15 +3,14 @@ Tests para el módulo classifier: extracción de .ics y conversión de RRULE.
 
 Las llamadas a Gemini se mockean para no incurrir en costes ni latencia.
 """
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 from src.ai.classifier import (
-    extract_event_from_ics,
+    VALID_CATEGORIES,
     _rrule_to_pattern,
     classify_email,
-    VALID_CATEGORIES,
+    extract_event_from_ics,
 )
-
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 

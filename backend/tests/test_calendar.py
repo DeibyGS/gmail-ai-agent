@@ -4,18 +4,18 @@ Tests unitarios para el módulo de Google Calendar.
 Se usan mocks para no hacer llamadas reales a la API de Google durante los tests.
 Un mock es un objeto falso que simula el comportamiento del objeto real.
 """
-from unittest.mock import patch, MagicMock, Mock
-from googleapiclient.errors import HttpError
+from datetime import datetime, timedelta, timezone
+from unittest.mock import MagicMock, Mock, patch
 
+from googleapiclient.errors import HttpError
 from src.calendar.client import (
-    create_event_from_email,
-    get_upcoming_events,
-    delete_event,
     _build_event_body,
     _parse_event,
     _parse_recurrence,
+    create_event_from_email,
+    delete_event,
+    get_upcoming_events,
 )
-
 
 # ========================
 # TESTS DE _parse_recurrence
@@ -229,7 +229,7 @@ def test_create_event_calls_api(mock_service):
 
     event_data = {
         "title": "Reunión de equipo",
-        "date": "2026-04-01",
+        "date": (datetime.now(timezone.utc) + timedelta(days=7)).strftime("%Y-%m-%d"),
         "time": "10:00",
         "location": None,
         "description": "Revisión semanal"
@@ -258,7 +258,7 @@ def test_create_event_with_recurrence(mock_service):
 
     event_data = {
         "title": "Standup diario",
-        "date": "2026-04-01",
+        "date": (datetime.now(timezone.utc) + timedelta(days=7)).strftime("%Y-%m-%d"),
         "time": "09:00",
         "recurrence": "WEEKLY:MO"
     }

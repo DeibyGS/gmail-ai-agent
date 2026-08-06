@@ -2,8 +2,8 @@
 Tests para main.py — verifica que el modo de arranque es correcto.
 """
 
-from unittest.mock import patch, MagicMock
 import importlib
+from unittest.mock import patch
 
 
 class TestMainStartup:

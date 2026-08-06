@@ -7,18 +7,16 @@ independientes y no dejen archivos en disco.
 
 import pytest
 from sqlalchemy import create_engine, text
-from sqlalchemy.orm import sessionmaker, Session
-
+from sqlalchemy.orm import Session, sessionmaker
 from src.database.models import Base
 from src.database.repository import (
-    save_emails,
-    get_stats_by_category,
     get_daily_volume,
-    get_top_senders,
-    get_processed_today,
     get_processed_history,
+    get_processed_today,
+    get_stats_by_category,
+    get_top_senders,
+    save_emails,
 )
-
 
 # ── Fixture: DB en memoria para cada test ─────────────────────────────────────
 

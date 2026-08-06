@@ -7,13 +7,13 @@ Endpoints:
 - DELETE /api/calendar/events/{id}  → eliminar evento por ID
 """
 
-from datetime import datetime
-from typing import Optional
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, HTTPException
+from googleapiclient.errors import HttpError
 from pydantic import BaseModel
 
-from src.calendar.client import create_event, get_upcoming_events, delete_event
+from src.calendar.client import create_event, delete_event, get_upcoming_events
 
 router = APIRouter(prefix="/api/calendar")
 
@@ -22,9 +22,9 @@ class CreateEventRequest(BaseModel):
     """Datos requeridos para crear un evento manualmente en Google Calendar."""
     title: str
     date: str                       # Formato: "YYYY-MM-DD"
-    time: Optional[str] = None      # Formato: "HH:MM" (opcional → evento de día completo)
-    location: Optional[str] = None
-    description: Optional[str] = None
+    time: str | None = None      # Formato: "HH:MM" (opcional → evento de día completo)
+    location: str | None = None
+    description: str | None = None
 
 
 @router.get("/events")
@@ -32,13 +32,13 @@ def list_calendar_events() -> dict:
     """Devuelve los próximos eventos del calendario (próximos 30 días)."""
     try:
         events = get_upcoming_events(max_results=50)
-    except Exception as e:
+    except (HttpError, RuntimeError, ValueError) as e:
         raise HTTPException(status_code=502, detail=f"Error al obtener eventos de Google Calendar: {e}")
 
     return {
         "events": events,
         "total": len(events),
-        "fetched_at": datetime.now().isoformat(),
+        "fetched_at": datetime.now(timezone.utc).isoformat(),
     }
 
 
@@ -60,13 +60,13 @@ def create_calendar_event(body: CreateEventRequest) -> dict:
         )
     except ValueError as e:
         raise HTTPException(status_code=422, detail=str(e))
-    except Exception as e:
+    except (HttpError, RuntimeError) as e:
         raise HTTPException(status_code=502, detail=f"Error al crear evento en Google Calendar: {e}")
 
     return {
         "message": "Evento creado correctamente",
         "event": created_event,
-        "created_at": datetime.now().isoformat(),
+        "created_at": datetime.now(timezone.utc).isoformat(),
     }
 
 
@@ -80,7 +80,7 @@ def remove_calendar_event(event_id: str) -> None:
     """
     try:
         found = delete_event(event_id)
-    except Exception as e:
+    except (HttpError, RuntimeError, ValueError) as e:
         # El mensaje ya viene descriptivo desde delete_event (tipo + detalle)
         raise HTTPException(status_code=502, detail=f"Error al eliminar evento en Google Calendar: {e}")
 

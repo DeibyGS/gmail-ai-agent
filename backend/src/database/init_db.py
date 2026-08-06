@@ -6,8 +6,10 @@ Se llama una vez al arrancar la aplicación para asegurar que las tablas existen
 """
 
 from pathlib import Path
+
 from sqlalchemy import create_engine, text
-from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.orm import Session, sessionmaker
+
 from src.database.models import Base
 
 # Ruta al archivo .db — vive en backend/data/ y nunca se commitea al repo

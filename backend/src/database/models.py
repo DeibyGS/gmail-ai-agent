@@ -6,13 +6,13 @@ de datos usando clases Python en lugar de escribir SQL crudo.
 """
 
 from datetime import datetime
-from sqlalchemy import Column, String, DateTime, Integer
+
+from sqlalchemy import Column, DateTime, Integer, String
 from sqlalchemy.orm import DeclarativeBase
 
 
 class Base(DeclarativeBase):
     """Clase base de la que heredan todos los modelos."""
-    pass
 
 
 class ProcessedEmail(Base):

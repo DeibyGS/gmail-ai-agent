@@ -7,12 +7,10 @@ Endpoints:
 """
 
 from pathlib import Path
-from typing import Optional
 
+from config import settings
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
-
-import config.settings as settings
 
 router = APIRouter()
 
@@ -33,11 +31,11 @@ class AppConfig(BaseModel):
 
 class AppConfigPatch(BaseModel):
     """Campos opcionales para PATCH /api/config."""
-    max_emails_per_run:      Optional[int] = Field(None, ge=1,  le=500)
-    check_interval_minutes:  Optional[int] = Field(None, ge=1,  le=1440)
-    gmail_filter_after_date: Optional[str] = None
-    quiet_hours_start:       Optional[int] = Field(None, ge=0,  le=23)
-    quiet_hours_end:         Optional[int] = Field(None, ge=0,  le=24)
+    max_emails_per_run:      int | None = Field(None, ge=1,  le=500)
+    check_interval_minutes:  int | None = Field(None, ge=1,  le=1440)
+    gmail_filter_after_date: str | None = None
+    quiet_hours_start:       int | None = Field(None, ge=0,  le=23)
+    quiet_hours_end:         int | None = Field(None, ge=0,  le=24)
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -147,7 +145,7 @@ def update_config(patch: AppConfigPatch) -> AppConfig:
     try:
         _write_env(updates)
         _reload_settings(updates)
-    except Exception as e:
+    except (OSError, ValueError) as e:
         raise HTTPException(status_code=500, detail=f"Error al guardar configuración: {e}")
 
     return get_config()

@@ -1,8 +1,11 @@
+import binascii
 import json
-from datetime import datetime
-from google import genai
-from icalendar import Calendar
+from datetime import datetime, timezone
+
 from config.settings import GEMINI_API_KEY
+from google import genai
+from google.genai import errors as genai_errors
+from icalendar import Calendar
 
 # Crea el cliente de Gemini con la API key
 client = genai.Client(api_key=GEMINI_API_KEY)
@@ -33,7 +36,7 @@ def classify_email(email: dict) -> dict:
         )
         # Gemini devuelve texto, lo parseamos como JSON
         result = _parse_response(response.text)
-    except Exception as e:
+    except (genai_errors.APIError, ValueError, TypeError) as e:
         # Si Gemini falla, devolvemos valores por defecto para no romper el flujo
         print(f"Error al clasificar correo '{email['subject']}': {e}")
         result = {
@@ -58,7 +61,7 @@ def _build_prompt(email: dict) -> str:
     Un buen prompt es específico sobre el formato de respuesta esperado.
     Pedimos JSON directamente para no tener que parsear texto libre.
     """
-    today = datetime.now().strftime("%Y-%m-%d")
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     return f"""
 Eres un asistente experto en análisis de correos electrónicos. Analiza el siguiente correo y responde ÚNICAMENTE con un JSON válido, sin texto adicional ni bloques de código markdown.
 
@@ -233,7 +236,7 @@ def extract_event_from_ics(attachments: list[dict]) -> dict | None:
                     "description": description,
                     "recurrence": recurrence,
                 }
-        except Exception as e:
+        except (ValueError, TypeError, KeyError, binascii.Error) as e:
             print(f"  Error parseando adjunto .ics: {e}")
 
     return None

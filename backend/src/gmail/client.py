@@ -1,6 +1,13 @@
 import base64
+import binascii
+
+from config.settings import (
+    GMAIL_FILTER_AFTER_DATE,
+    MAX_EMAILS_PER_RUN,
+    get_google_credentials,
+)
 from googleapiclient.discovery import build
-from config.settings import get_google_credentials, MAX_EMAILS_PER_RUN, GMAIL_FILTER_AFTER_DATE
+from googleapiclient.errors import HttpError
 
 
 def get_gmail_service():
@@ -140,7 +147,7 @@ def _extract_ics_attachments(service, message_id: str, message: dict) -> list[di
             else:
                 continue
             attachments.append({"filename": filename, "data": data})
-        except Exception as e:
+        except (binascii.Error, HttpError, ValueError) as e:
             print(f"  Error descargando adjunto '{filename}': {e}")
 
     return attachments

@@ -5,10 +5,13 @@ Centraliza todas las operaciones de lectura/escritura sobre la DB.
 Los demás módulos llaman estas funciones en lugar de escribir SQL directamente.
 """
 
-from datetime import datetime, date
 from collections import defaultdict
+from datetime import datetime, timezone
+
 from sqlalchemy import text
+from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session
+
 from src.database.models import ProcessedEmail
 
 
@@ -19,7 +22,7 @@ def save_emails(db: Session, emails: list[dict]) -> int:
     Evita duplicados comprobando el email_id antes de insertar.
     Devuelve el número de correos nuevos guardados.
     """
-    today = date.today().isoformat()
+    today = datetime.now(timezone.utc).date().isoformat()
     saved = 0
 
     for email in emails:
@@ -39,7 +42,7 @@ def save_emails(db: Session, emails: list[dict]) -> int:
             sender       = email.get("sender", ""),
             category     = email.get("category", "otro"),
             summary      = email.get("summary", ""),
-            processed_at = datetime.now(),
+            processed_at = datetime.now(timezone.utc),
             day          = today,
         )
         db.add(record)
@@ -148,7 +151,7 @@ def get_processed_today(db: Session) -> list[dict]:
     Devuelve todos los correos procesados hoy, ordenados del más reciente al más antiguo.
     Incluye subject, sender, category, summary y hora de procesamiento.
     """
-    today = date.today().isoformat()
+    today = datetime.now(timezone.utc).date().isoformat()
     emails = (
         db.query(ProcessedEmail)
         .filter(ProcessedEmail.day == today)
@@ -210,7 +213,7 @@ def search_emails_fts(
             WHERE emails_fts MATCH :q
             ORDER BY bm25(emails_fts)
         """), {"q": q}).fetchall()
-    except Exception:
+    except OperationalError:
         # Si el usuario escribe una query FTS5 inválida (ej: "AND"), devolvemos vacío
         return []
 
