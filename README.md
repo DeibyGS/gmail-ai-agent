@@ -59,6 +59,44 @@ crea eventos en Google Calendar para reuniones, y expone todo a través de un da
 ---
 
 <!-- AUTO-GENERATED -->
+## AI Development Benchmark
+
+Gmail AI Agent fue construido por un desarrollador humano trabajando con IA como **pareja de pair programming**. Meta destacada: este proyecto *usa* IA (Gemini) y también fue construido *con* IA — la aceleración y la inteligencia coexistieron, siempre bajo supervisión humana.
+
+### Cómo trabajamos juntos
+
+| Responsabilidad humana | IA implementó, siempre revisada por humano |
+|------------------------|------------------------------------------|
+| Diseño del pipeline Gmail → Gemini → Calendar | Generación de endpoints FastAPI |
+| Reglas de clasificación y agendado | Componentes React, hooks |
+| Integración OAuth2 y seguridad | Scaffolding, refactorización |
+| Revisión y aceptación del código | Testing (pytest/vitest), documentación |
+
+**Workflow:** `Idea → Spec → Implementación (IA) → Revisión humana → Test → Refinar → Merge`
+
+### AI Development Principles
+
+- La IA nunca tomó decisiones de producto.
+- Toda implementación partió de una especificación escrita.
+- La documentación se trató como contexto ejecutable para la IA.
+- Todo código generado requirió revisión humana.
+- La arquitectura prevaleció sobre la velocidad de implementación.
+
+<details>
+<summary><strong>Métricas de soporte</strong></summary>
+<br>
+
+| Métrica | Valor |
+|---------|-------|
+| Sesiones de IA | No registradas (tracking a activar) |
+| Modelos | Google Gemini (producto) · Claude/OpenCode (desarrollo) |
+
+_Las métricas de esta sección pueden ampliarse con [ClaudeStat](https://github.com/DeibyGS/claudestat)._
+
+</details>
+
+---
+
 ## Instalación y uso
 
 ### Requisitos previos
