@@ -13,14 +13,18 @@ El usuario selecciona los correos de reunión y los agenda desde el dashboard.
 """
 
 from datetime import datetime
+from zoneinfo import ZoneInfo
 
 from apscheduler.schedulers.background import BackgroundScheduler
+from config.settings import CHECK_INTERVAL_MINUTES, QUIET_HOURS_END, QUIET_HOURS_START
+from googleapiclient.errors import HttpError
 
-from src.gmail.client import get_unread_emails, mark_as_read
 from src.ai.classifier import classify_emails
 from src.database.init_db import get_db
 from src.database.repository import save_emails
-from config.settings import CHECK_INTERVAL_MINUTES, QUIET_HOURS_START, QUIET_HOURS_END
+from src.gmail.client import get_unread_emails, mark_as_read
+
+LOCAL_TZ = ZoneInfo("Europe/Madrid")
 
 
 def is_quiet_hours() -> bool:
@@ -28,7 +32,7 @@ def is_quiet_hours() -> bool:
     Retorna True si la hora actual está en el horario de descanso configurado.
     Los límites se leen de QUIET_HOURS_START y QUIET_HOURS_END en settings.
     """
-    hour = datetime.now().hour
+    hour = datetime.now(LOCAL_TZ).hour
     return QUIET_HOURS_START <= hour < QUIET_HOURS_END
 
 
@@ -46,11 +50,11 @@ def run_processing_cycle() -> None:
     "Agendar" en el dashboard para cada correo de reunión.
     """
     if is_quiet_hours():
-        print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Ciclo omitido — horario de descanso (00:00–07:59).")
+        print(f"[{datetime.now(LOCAL_TZ).strftime('%Y-%m-%d %H:%M:%S')}] Ciclo omitido — horario de descanso (00:00–07:59).")
         return
 
     print(f"\n{'='*50}")
-    print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Iniciando ciclo de procesamiento...")
+    print(f"[{datetime.now(LOCAL_TZ).strftime('%Y-%m-%d %H:%M:%S')}] Iniciando ciclo de procesamiento...")
     print(f"{'='*50}")
 
     # ── Paso 1: Obtener correos no leídos ──────────────────────────────────────
@@ -78,7 +82,7 @@ def run_processing_cycle() -> None:
     for email in classified_emails:
         try:
             mark_as_read(email["id"])
-        except Exception as e:
+        except HttpError as e:
             print(f"  Error al marcar correo '{email.get('subject', '')}' como leído: {e}")
 
     # ── Paso 5: Resumen del ciclo ──────────────────────────────────────────────

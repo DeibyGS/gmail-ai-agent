@@ -9,10 +9,8 @@ Usamos mocks (unittest.mock) para evitar llamadas reales a:
 Esto permite que los tests sean rápidos, deterministas y no requieran credenciales.
 """
 
-import pytest
-from unittest.mock import patch, MagicMock, call
 from datetime import datetime
-
+from unittest.mock import MagicMock, patch
 
 # ── Helpers de fixtures ────────────────────────────────────────────────────────
 
@@ -268,8 +266,8 @@ class TestStartScheduler:
 
     def test_start_scheduler_usa_check_interval_minutes(self):
         """El intervalo del job debe coincidir con CHECK_INTERVAL_MINUTES."""
-        from src.scheduler.job import start_scheduler
         from config.settings import CHECK_INTERVAL_MINUTES
+        from src.scheduler.job import start_scheduler
 
         mock_scheduler_instance = MagicMock()
         mock_scheduler_class = MagicMock(return_value=mock_scheduler_instance)

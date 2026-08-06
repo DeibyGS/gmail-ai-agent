@@ -1,9 +1,11 @@
 from datetime import datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
 
+from config.settings import get_google_credentials
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
-from config.settings import get_google_credentials
+LOCAL_TZ = ZoneInfo("Europe/Madrid")
 
 
 def get_calendar_service():
@@ -82,14 +84,14 @@ def create_event_from_email(event_data: dict) -> dict | None:
     # Si no hay fecha pero sí recurrencia, usar hoy como inicio de la serie
     if not event_data.get("date"):
         if event_data.get("recurrence"):
-            event_data = {**event_data, "date": datetime.now().strftime("%Y-%m-%d")}
+            event_data = {**event_data, "date": datetime.now(LOCAL_TZ).strftime("%Y-%m-%d")}
         else:
             return None
 
     # Descartar eventos con fecha en el pasado (Gemini puede extraer fechas de emails viejos)
     try:
-        event_date = datetime.strptime(event_data["date"], "%Y-%m-%d").date()
-        if event_date < datetime.now().date():
+        event_date = datetime.strptime(event_data["date"], "%Y-%m-%d").replace(tzinfo=LOCAL_TZ)
+        if event_date.date() < datetime.now(LOCAL_TZ).date():
             print(f"Evento descartado: fecha en el pasado ({event_data['date']}) — '{event_data.get('title')}'")
             return None
     except ValueError:
@@ -124,12 +126,12 @@ def _build_event_body(event_data: dict) -> dict:
     recurrence_pattern = event_data.get("recurrence")
 
     if time_str:
-        start_dt = datetime.strptime(f"{date_str} {time_str}", "%Y-%m-%d %H:%M")
+        start_dt = datetime.strptime(f"{date_str} {time_str}", "%Y-%m-%d %H:%M").replace(tzinfo=LOCAL_TZ)
         end_dt = start_dt + timedelta(hours=1)
-        start = {"dateTime": start_dt.isoformat(), "timeZone": "Europe/Madrid"}
-        end = {"dateTime": end_dt.isoformat(), "timeZone": "Europe/Madrid"}
+        start = {"dateTime": start_dt.replace(tzinfo=None).isoformat(), "timeZone": "Europe/Madrid"}
+        end = {"dateTime": end_dt.replace(tzinfo=None).isoformat(), "timeZone": "Europe/Madrid"}
     else:
-        next_day = (datetime.strptime(date_str, "%Y-%m-%d") + timedelta(days=1)).strftime("%Y-%m-%d")
+        next_day = (datetime.strptime(date_str, "%Y-%m-%d").replace(tzinfo=LOCAL_TZ) + timedelta(days=1)).strftime("%Y-%m-%d")
         start = {"date": date_str}
         end = {"date": next_day}
 

@@ -8,14 +8,13 @@ Todos los módulos externos (Gmail, Gemini, Google Calendar, scheduler)
 se mockean para que los tests sean rápidos y no requieran credenciales reales.
 """
 
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 import pytest
 from fastapi.testclient import TestClient
 
 # Importamos la app FastAPI desde el módulo de rutas
 from src.api.routes import app
-
 
 # ── Fixture: cliente de test ──────────────────────────────────────────────────
 
@@ -238,7 +237,7 @@ def test_get_emails_gmail_error(client):
     502 significa que el servidor actuó como gateway y obtuvo una respuesta inválida
     del servicio externo (Gmail en este caso).
     """
-    with patch("src.api.routes.get_unread_emails", side_effect=Exception("Gmail API timeout")):
+    with patch("src.api.routes.get_unread_emails", side_effect=OSError("Gmail API timeout")):
         response = client.get("/api/emails")
 
     assert response.status_code == 502

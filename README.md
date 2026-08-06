@@ -209,3 +209,41 @@ gmail-ai-agent/
 See full reference in [`docs/API.md`](docs/API.md).
 
 Local base URL: `http://localhost:8000`
+
+---
+
+## AI Development Benchmark
+
+Email Agent was engineered by a human developer working with AI as a **pair programming partner** — and it's a meta example: the product itself uses AI (Gemini) to classify emails, while AI also helped build it. The AI accelerated implementation; the product design, architecture, and engineering decisions stayed human.
+
+### How we worked together
+
+| Human-owned | AI implemented, always human-reviewed |
+|-------------|-------------------------------------|
+| Product design & UX | FastAPI + React scaffolding |
+| Gmail/Calendar integration logic | Gemini integration & prompt design |
+| Dashboard & dashboard design system | Component generation, refactoring |
+| Code review & final acceptance | Tests, docs, CI tuning |
+
+**Workflow:** `Idea → Spec → AI implementation → Human review → Test → Refine → Merge`
+
+### AI Development Principles
+
+- AI never made product decisions.
+- Every implementation started from a written specification.
+- Documentation was treated as executable context for AI.
+- All generated code required human review.
+- Architecture was preserved over implementation speed.
+
+<details>
+<summary><strong>Supporting metrics</strong></summary>
+<br>
+
+| Metric | Value |
+|--------|-------|
+| AI sessions | Not yet tracked (tracking to be enabled) |
+| Primary AI model | Gemini (product) + Claude (development) |
+
+_Metrics for this section can be expanded with [ClaudeStat](https://github.com/DeibyGS/claudestat)._
+
+</details>

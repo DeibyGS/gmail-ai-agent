@@ -6,10 +6,8 @@ Esto permite testear la lógica del cliente de forma aislada y rápida.
 """
 
 from unittest.mock import MagicMock, patch
-import pytest
 
 from src.gmail.client import get_unread_emails, mark_as_read
-
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 

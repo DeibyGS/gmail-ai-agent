@@ -13,15 +13,15 @@ El briefing incluye:
 """
 
 import json
-from datetime import datetime
-from typing import Optional
-
-from fastapi import APIRouter, Query, HTTPException
-from google import genai
+from datetime import datetime, timezone
 
 from config.settings import GEMINI_API_KEY
+from fastapi import APIRouter, HTTPException, Query
+from google import genai
+from google.genai import errors as genai_errors
+
 from src.database.init_db import get_db
-from src.database.repository import get_processed_today, get_processed_history
+from src.database.repository import get_processed_history, get_processed_today
 
 router = APIRouter()
 
@@ -30,7 +30,7 @@ _gemini = genai.Client(api_key=GEMINI_API_KEY)
 
 @router.get("/api/briefing")
 def get_briefing(
-    date: Optional[str] = Query(None, description="Fecha YYYY-MM-DD (defecto: hoy)")
+    date: str | None = Query(None, description="Fecha YYYY-MM-DD (defecto: hoy)")
 ) -> dict:
     """
     Genera un briefing ejecutivo de los correos procesados en una fecha dada.
@@ -38,7 +38,7 @@ def get_briefing(
     Si no se indica fecha, usa hoy. Llama a Gemini con un resumen de todos
     los correos del día para obtener un análisis narrativo estructurado.
     """
-    target_date = date or datetime.now().strftime("%Y-%m-%d")
+    target_date = date or datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
     db = get_db()
     try:
@@ -61,7 +61,7 @@ def get_briefing(
             "pending_meetings": [],
             "by_category":      {},
             "recommendations":  ["Procesa tus correos pulsando 'Procesar ahora' en el dashboard."],
-            "generated_at":     datetime.now().isoformat(),
+            "generated_at":     datetime.now(timezone.utc).isoformat(),
         }
 
     # Calcular estadísticas básicas para incluirlas en el briefing
@@ -79,14 +79,14 @@ def get_briefing(
             contents=prompt,
         )
         briefing = _parse_briefing_response(response.text)
-    except Exception as e:
+    except (genai_errors.APIError, ValueError, TypeError) as e:
         raise HTTPException(status_code=502, detail=f"Error al generar briefing con Gemini: {e}")
 
     return {
         "date":             target_date,
         "total":            len(emails),
         "by_category":      by_category,
-        "generated_at":     datetime.now().isoformat(),
+        "generated_at":     datetime.now(timezone.utc).isoformat(),
         **briefing,
     }
 

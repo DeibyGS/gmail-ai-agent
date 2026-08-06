@@ -17,25 +17,29 @@ Endpoints de calendario → ver src/api/calendar_router.py
 Endpoint de briefing   → ver src/api/briefing_router.py
 """
 
-from datetime import datetime
-from typing import Optional
-
 from contextlib import asynccontextmanager
+from datetime import datetime, timezone
+
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
+from google.genai import errors as genai_errors
+from googleapiclient.errors import HttpError
 
-from src.gmail.client import get_unread_emails, mark_as_read
 from src.ai.classifier import classify_emails
-from src.scheduler.job import run_processing_cycle
-from src.database.init_db import get_db, init_db
-from src.database.repository import (
-    get_stats_by_category, get_daily_volume, get_top_senders,
-    get_processed_today, get_processed_history, search_emails_fts,
-)
+from src.api.briefing_router import router as briefing_router
 from src.api.calendar_router import router as calendar_router
 from src.api.config_router import router as config_router
-from src.api.briefing_router import router as briefing_router
-
+from src.database.init_db import get_db, init_db
+from src.database.repository import (
+    get_daily_volume,
+    get_processed_history,
+    get_processed_today,
+    get_stats_by_category,
+    get_top_senders,
+    search_emails_fts,
+)
+from src.gmail.client import get_unread_emails, mark_as_read
+from src.scheduler.job import run_processing_cycle
 
 # ── Inicialización de la app FastAPI ──────────────────────────────────────────
 
@@ -74,21 +78,21 @@ def get_emails() -> dict:
     """Obtiene y clasifica en tiempo real los correos no leídos de Gmail."""
     try:
         emails = get_unread_emails()
-    except Exception as e:
+    except (HttpError, OSError) as e:
         raise HTTPException(status_code=502, detail=f"Error al obtener correos de Gmail: {e}")
 
     if not emails:
-        return {"emails": [], "total": 0, "fetched_at": datetime.now().isoformat()}
+        return {"emails": [], "total": 0, "fetched_at": datetime.now(timezone.utc).isoformat()}
 
     try:
         classified = classify_emails(emails)
-    except Exception as e:
+    except (genai_errors.APIError, ValueError, TypeError) as e:
         raise HTTPException(status_code=502, detail=f"Error al clasificar correos con Gemini: {e}")
 
     return {
         "emails": classified,
         "total": len(classified),
-        "fetched_at": datetime.now().isoformat(),
+        "fetched_at": datetime.now(timezone.utc).isoformat(),
     }
 
 
@@ -97,15 +101,15 @@ def get_email_stats() -> dict:
     """Devuelve estadísticas (conteo por categoría) de los correos no leídos actuales."""
     try:
         emails = get_unread_emails()
-    except Exception as e:
+    except (HttpError, OSError) as e:
         raise HTTPException(status_code=502, detail=f"Error al obtener correos de Gmail: {e}")
 
     if not emails:
-        return {"total": 0, "by_category": {}, "fetched_at": datetime.now().isoformat()}
+        return {"total": 0, "by_category": {}, "fetched_at": datetime.now(timezone.utc).isoformat()}
 
     try:
         classified = classify_emails(emails)
-    except Exception as e:
+    except (genai_errors.APIError, ValueError, TypeError) as e:
         raise HTTPException(status_code=502, detail=f"Error al clasificar correos con Gemini: {e}")
 
     by_category: dict[str, int] = {}
@@ -116,7 +120,7 @@ def get_email_stats() -> dict:
     return {
         "total": len(classified),
         "by_category": by_category,
-        "fetched_at": datetime.now().isoformat(),
+        "fetched_at": datetime.now(timezone.utc).isoformat(),
     }
 
 
@@ -129,12 +133,12 @@ def trigger_processing_cycle() -> dict:
     """
     try:
         run_processing_cycle()
-    except Exception as e:
+    except (genai_errors.APIError, HttpError, ValueError) as e:
         raise HTTPException(status_code=500, detail=f"Error durante el ciclo de procesamiento: {e}")
 
     return {
         "message": "Ciclo de procesamiento ejecutado correctamente",
-        "executed_at": datetime.now().isoformat(),
+        "executed_at": datetime.now(timezone.utc).isoformat(),
     }
 
 
@@ -143,8 +147,8 @@ def trigger_processing_cycle() -> dict:
 @app.get("/api/emails/processed")
 def get_processed_emails(
     view: str = Query("today", description="'today' o 'history'"),
-    since: Optional[str] = Query(None, description="Fecha mínima YYYY-MM-DD (solo history)"),
-    category: Optional[str] = Query(None, description="Filtrar por categoría (solo history)"),
+    since: str | None = Query(None, description="Fecha mínima YYYY-MM-DD (solo history)"),
+    category: str | None = Query(None, description="Filtrar por categoría (solo history)"),
 ) -> dict:
     """
     Devuelve correos ya procesados desde la base de datos local.
@@ -165,7 +169,7 @@ def get_processed_emails(
         "emails": emails,
         "total": len(emails),
         "view": view,
-        "fetched_at": datetime.now().isoformat(),
+        "fetched_at": datetime.now(timezone.utc).isoformat(),
     }
 
 
@@ -174,9 +178,9 @@ def get_processed_emails(
 @app.get("/api/emails/search")
 def search_emails(
     q: str = Query(..., min_length=1, description="Texto a buscar en asunto, remitente y resumen"),
-    category: Optional[str] = Query(None, description="Filtrar por categoría"),
-    since: Optional[str] = Query(None, description="Fecha mínima YYYY-MM-DD"),
-    until: Optional[str] = Query(None, description="Fecha máxima YYYY-MM-DD"),
+    category: str | None = Query(None, description="Filtrar por categoría"),
+    since: str | None = Query(None, description="Fecha mínima YYYY-MM-DD"),
+    until: str | None = Query(None, description="Fecha máxima YYYY-MM-DD"),
 ) -> dict:
     """
     Busca correos en el historial usando FTS5 (full-text search).
@@ -194,21 +198,21 @@ def search_emails(
         "emails":      emails,
         "total":       len(emails),
         "query":       q,
-        "fetched_at":  datetime.now().isoformat(),
+        "fetched_at":  datetime.now(timezone.utc).isoformat(),
     }
 
 
 # ── Endpoints de estadísticas históricas (SQLite) ─────────────────────────────
 
 @app.get("/api/stats/categories")
-def stats_by_category(since: Optional[str] = Query(None, description="Fecha mínima YYYY-MM-DD")) -> dict:
+def stats_by_category(since: str | None = Query(None, description="Fecha mínima YYYY-MM-DD")) -> dict:
     """Distribución histórica de correos por categoría desde SQLite."""
     db = get_db()
     try:
         result = get_stats_by_category(db, since_day=since)
     finally:
         db.close()
-    return {**result, "fetched_at": datetime.now().isoformat()}
+    return {**result, "fetched_at": datetime.now(timezone.utc).isoformat()}
 
 
 @app.get("/api/stats/daily")
@@ -219,13 +223,13 @@ def stats_daily_volume(days: int = Query(30, description="Número de días a mos
         result = get_daily_volume(db, last_days=days)
     finally:
         db.close()
-    return {"daily": result, "fetched_at": datetime.now().isoformat()}
+    return {"daily": result, "fetched_at": datetime.now(timezone.utc).isoformat()}
 
 
 @app.get("/api/stats/senders")
 def stats_top_senders(
     limit: int = Query(10, description="Número de remitentes a devolver"),
-    since: Optional[str] = Query(None, description="Fecha mínima YYYY-MM-DD"),
+    since: str | None = Query(None, description="Fecha mínima YYYY-MM-DD"),
 ) -> dict:
     """Top remitentes por número de correos enviados."""
     db = get_db()
@@ -233,7 +237,7 @@ def stats_top_senders(
         result = get_top_senders(db, limit=limit, since_day=since)
     finally:
         db.close()
-    return {"senders": result, "fetched_at": datetime.now().isoformat()}
+    return {"senders": result, "fetched_at": datetime.now(timezone.utc).isoformat()}
 
 
 # Suprimir warning de unused import (mark_as_read se usa en job.py, no aquí)
