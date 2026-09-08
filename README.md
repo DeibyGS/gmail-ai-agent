@@ -47,7 +47,7 @@ Automatically classify incoming emails with Google Gemini, schedule meeting even
 ## Features
 
 - **Manual email processing**: a "Process now" button on the dashboard
-- **AI classification**: Gemini classifies each email with a category (meeting, urgent, promotion, informational, other) and generates a summary
+- **AI classification**: Gemini classifies each email into one of 9 categories (meeting, urgent, reminder, invoice, support, notification, personal, promotion, other) and generates a summary
 - **Manual meeting scheduling**: emails classified as `meeting` show a "📅 Schedule" button that opens a pre-filled modal with the data extracted by Gemini (title, date, time, location, description). The user reviews and confirms before the event is created. If the email includes a `.ics` attachment, the data is extracted directly from the file with higher precision.
 - **Settings panel** (`/settings`): adjust `MAX_EMAILS_PER_RUN`, `CHECK_INTERVAL_MINUTES`, `GMAIL_FILTER_AFTER_DATE` and the quiet hours (`QUIET_HOURS_START`/`END`) from the dashboard. Changes are persisted to `.env` and applied without restarting.
 - **Date filter**: only processes emails received after `GMAIL_FILTER_AFTER_DATE` (default `2026/03/20`)
