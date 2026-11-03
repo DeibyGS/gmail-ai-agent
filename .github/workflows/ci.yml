@@ -37,8 +37,8 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install ruff
-        run: pip install ruff
+      - name: Install ruff (pinned to match backend/requirements.txt)
+        run: pip install ruff==0.15.7
 
       - name: Lint backend
         run: ruff check backend/src/
