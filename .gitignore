@@ -5,6 +5,10 @@
 .env.local
 .env.*.local
 
+# Cachés locales de herramientas
+.ruff_cache/
+.engram/
+
 # ========================
 # PYTHON (backend)
 # ========================
@@ -50,8 +54,7 @@ Thumbs.db
 
 # ========================
 # ARCHIVOS DE GESTIÓN PERSONAL
+# (archivados en docs/archive/, nunca se commitean)
 # ========================
 HANDOFF.md
-PROJECT_SUMMARY.md
-summary-*.md
-linkedin_post.md
+docs/archive/
